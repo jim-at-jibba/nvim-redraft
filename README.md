@@ -2,6 +2,8 @@
 
 A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic, GLM).
 
+https://github.com/user-attachments/assets/demo.mp4
+
 ## Features
 
 - Select code in visual mode and apply AI edits inline
