@@ -29,7 +29,7 @@ IMPORTANT:
     visual_edit = "<leader>ae",
   },
   llm = {
-    model = "morph-v3-large",
+    model = "gpt-4o-mini",
     timeout = 30000,
   },
   debug = false,

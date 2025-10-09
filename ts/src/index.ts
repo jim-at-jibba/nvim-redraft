@@ -38,9 +38,9 @@ class JSONRPCServer {
   }
 
   private validateEnvironment(): void {
-    const apiKey = process.env.MORPH_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      const msg = "MORPH_API_KEY environment variable is not set";
+      const msg = "OPENAI_API_KEY environment variable is not set";
       logger.error("server", msg);
       this.logError(msg);
       return;
@@ -71,7 +71,7 @@ class JSONRPCServer {
     logger.debug("server", "Request code:", request.params.code);
 
     if (!this.llmService) {
-      const error = "MORPH_API_KEY not set. Please set the environment variable and restart Neovim.";
+      const error = "OPENAI_API_KEY not set. Please set the environment variable and restart Neovim.";
       logger.error("server", `Request #${request.id} failed: ${error}`);
       this.sendResponse({
         id: request.id,

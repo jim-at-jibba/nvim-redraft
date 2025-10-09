@@ -8,30 +8,19 @@ export interface EditRequest {
 }
 
 export class LLMService {
-  private morphClient: OpenAI;
-  private openaiClient: OpenAI;
+  private client: OpenAI;
   private model: string;
-  private editModel: string;
 
-  constructor(apiKey: string, model: string = "morph-v3-large") {
-    this.morphClient = new OpenAI({
-      apiKey,
-      baseURL: "https://api.morphllm.com/v1",
-    });
-
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      throw new Error(
-        "OPENAI_API_KEY environment variable is required for edit generation",
-      );
+  constructor(apiKey: string, model: string = "gpt-4o-mini") {
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is required");
     }
 
-    this.openaiClient = new OpenAI({
-      apiKey: openaiKey,
+    this.client = new OpenAI({
+      apiKey,
     });
 
     this.model = model;
-    this.editModel = "gpt-4o-mini";
   }
 
   async edit(request: EditRequest): Promise<string> {
@@ -70,14 +59,14 @@ export class LLMService {
   ): Promise<string> {
     logger.debug(
       "enhance-instruction",
-      `Enhancing instruction with ${this.editModel}`,
+      `Enhancing instruction with ${this.model}`,
     );
     logger.debug("enhance-instruction", `Original: ${instruction}`);
 
     const startTime = Date.now();
 
-    const response = await this.openaiClient.chat.completions.create({
-      model: this.editModel,
+    const response = await this.client.chat.completions.create({
+      model: this.model,
       messages: [
         {
           role: "system",
@@ -122,14 +111,14 @@ export class LLMService {
     instruction: string,
     systemPrompt?: string,
   ): Promise<string> {
-    logger.debug("apply-edit", `Calling ${this.editModel} for edit`);
+    logger.debug("apply-edit", `Calling ${this.model} for edit`);
     logger.debug("apply-edit", "Input code:", code);
     logger.debug("apply-edit", "Instruction:", instruction);
 
     const startTime = Date.now();
 
-    const response = await this.openaiClient.chat.completions.create({
-      model: this.editModel,
+    const response = await this.client.chat.completions.create({
+      model: this.model,
       messages: [
         {
           role: "system",
