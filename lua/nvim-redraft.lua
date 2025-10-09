@@ -3,6 +3,7 @@ local input = require("nvim-redraft.input")
 local ipc = require("nvim-redraft.ipc")
 local replace = require("nvim-redraft.replace")
 local logger = require("nvim-redraft.logger")
+local spinner = require("nvim-redraft.spinner")
 
 local M = {}
 
@@ -89,11 +90,17 @@ function M.edit()
     )
     logger.debug("edit", "System prompt:", M.config.system_prompt)
 
+    spinner.start("Processing edit...")
+
     ipc.send_request({
       code = sel.text,
       instruction = instruction,
       systemPrompt = M.config.system_prompt,
+      morphConfig = M.config.llm.providers.morph,
+      model = M.config.llm.model,
     }, function(result, error)
+      spinner.stop()
+
       if error then
         local elapsed = (vim.loop.hrtime() - start_time) / 1e9
         logger.error("edit", string.format("Edit failed after %.2fs: %s", elapsed, error))
