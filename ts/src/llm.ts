@@ -173,8 +173,18 @@ class OpenAIProvider extends BaseLLMProvider {
 }
 
 class GLMProvider extends BaseLLMProvider {
+  private baseURL?: string;
+
+  constructor(apiKey: string, model: string, baseURL?: string) {
+    super(apiKey, model);
+    this.baseURL = baseURL;
+  }
+
   protected createProviderInstance() {
-    const zhipuProvider = createZhipu({ apiKey: this.apiKey });
+    const zhipuProvider = createZhipu({
+      apiKey: this.apiKey,
+      baseURL: this.baseURL,
+    });
     return (model: string) =>
       zhipuProvider(model) as unknown as LanguageModel;
   }
@@ -316,11 +326,11 @@ Expand into one specific sentence:`,
  */
 const PROVIDERS: Record<
   string,
-  (apiKey: string, model: string) => LLMProvider
+  (apiKey: string, model: string, baseURL?: string) => LLMProvider
 > = {
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
-  glm: (apiKey, model) => new GLMProvider(apiKey, model),
+  glm: (apiKey, model, baseURL) => new GLMProvider(apiKey, model, baseURL),
 };
 
 /**
@@ -347,12 +357,13 @@ export function createProvider(
   provider: string,
   apiKey: string,
   model: string,
+  baseURL?: string,
 ): LLMProvider {
   const factory = PROVIDERS[provider];
   if (!factory) {
     throw new Error(`Unknown provider: ${provider}`);
   }
-  return factory(apiKey, model);
+  return factory(apiKey, model, baseURL);
 }
 
 export function getApiKey(provider: string): string {
