@@ -1,5 +1,5 @@
 import * as readline from "readline";
-import { LLMService } from "./llm";
+import { LLMService, createProvider, getApiKey, getDefaultModel } from "./llm";
 import { logger } from "./logger";
 
 interface JSONRPCRequest {
@@ -9,6 +9,8 @@ interface JSONRPCRequest {
     code: string;
     instruction: string;
     systemPrompt?: string;
+    provider?: string;
+    model?: string;
   };
 }
 
@@ -19,7 +21,6 @@ interface JSONRPCResponse {
 }
 
 class JSONRPCServer {
-  private llmService: LLMService | null = null;
   private rl: readline.Interface;
 
   constructor() {
@@ -33,28 +34,6 @@ class JSONRPCServer {
       output: process.stdout,
       terminal: false,
     });
-
-    this.validateEnvironment();
-  }
-
-  private validateEnvironment(): void {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      const msg = "OPENAI_API_KEY environment variable is not set";
-      logger.error("server", msg);
-      this.logError(msg);
-      return;
-    }
-
-    try {
-      this.llmService = new LLMService(apiKey);
-      logger.info("server", "LLM service initialized successfully");
-      this.logError("LLM service initialized successfully");
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error("server", "Failed to initialize LLM service: " + errorMsg);
-      this.logError("Failed to initialize LLM service: " + errorMsg);
-    }
   }
 
   private logError(message: string): void {
@@ -70,16 +49,6 @@ class JSONRPCServer {
     logger.debug("server", `Request instruction: ${request.params.instruction}`);
     logger.debug("server", "Request code:", request.params.code);
 
-    if (!this.llmService) {
-      const error = "OPENAI_API_KEY not set. Please set the environment variable and restart Neovim.";
-      logger.error("server", `Request #${request.id} failed: ${error}`);
-      this.sendResponse({
-        id: request.id,
-        error,
-      });
-      return;
-    }
-
     if (request.method !== "edit") {
       const error = `Unknown method: ${request.method}`;
       logger.error("server", `Request #${request.id} failed: ${error}`);
@@ -91,7 +60,27 @@ class JSONRPCServer {
     }
 
     try {
-      const result = await this.llmService.edit({
+      const providerName = request.params.provider || "openai";
+      const modelName = request.params.model || getDefaultModel(providerName);
+
+      logger.debug("server", `Using provider: ${providerName}, model: ${modelName}`);
+
+      const apiKey = getApiKey(providerName);
+      if (!apiKey) {
+        const keyName = providerName === "openai" ? "OPENAI_API_KEY" : "ANTHROPIC_API_KEY";
+        const error = `${keyName} environment variable is not set. Please set it and restart Neovim.`;
+        logger.error("server", `Request #${request.id} failed: ${error}`);
+        this.sendResponse({
+          id: request.id,
+          error,
+        });
+        return;
+      }
+
+      const provider = createProvider(providerName, apiKey, modelName);
+      const llmService = new LLMService(provider);
+
+      const result = await llmService.edit({
         code: request.params.code,
         instruction: request.params.instruction,
         systemPrompt: request.params.systemPrompt,

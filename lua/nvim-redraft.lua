@@ -30,6 +30,7 @@ IMPORTANT:
     visual_edit = "<leader>ae",
   },
   llm = {
+    provider = "openai",
     model = "gpt-4o-mini",
     timeout = 30000,
   },
@@ -96,7 +97,7 @@ function M.edit()
       code = sel.text,
       instruction = instruction,
       systemPrompt = M.config.system_prompt,
-      morphConfig = M.config.llm.providers.morph,
+      provider = M.config.llm.provider,
       model = M.config.llm.model,
     }, function(result, error)
       spinner.stop()

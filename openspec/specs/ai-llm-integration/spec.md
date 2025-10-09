@@ -69,3 +69,26 @@ The system SHALL extract edited code from LLM response for replacement.
 - **WHEN** LLM response is missing expected fields
 - **THEN** error is returned to Lua with details for debugging
 
+### Requirement: LLM Configuration
+The system SHALL allow users to configure LLM provider, model, and timeout.
+
+#### Scenario: Provider selection
+- **WHEN** user sets `llm.provider` to "openai" or "anthropic" in configuration
+- **THEN** the system uses the specified provider for all LLM requests
+
+#### Scenario: Custom model name
+- **WHEN** user sets `llm.model` in configuration
+- **THEN** requests use the specified model instead of provider default
+
+#### Scenario: Custom timeout
+- **WHEN** user sets `llm.timeout` in configuration
+- **THEN** requests timeout after specified milliseconds
+
+#### Scenario: Default model per provider
+- **WHEN** user does not specify `llm.model` and provider is "openai"
+- **THEN** requests use "gpt-4o-mini" as default model
+
+#### Scenario: Default model for Anthropic
+- **WHEN** user does not specify `llm.model` and provider is "anthropic"
+- **THEN** requests use "claude-3-5-sonnet-20241022" as default model
+
