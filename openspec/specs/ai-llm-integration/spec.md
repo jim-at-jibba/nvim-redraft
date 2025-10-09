@@ -4,7 +4,7 @@
 TBD - created by archiving change add-inline-ai-editing. Update Purpose after archive.
 ## Requirements
 ### Requirement: MorphLLM API Integration
-The system SHALL communicate with LLM providers using the Vercel AI SDK unified interface via TypeScript service.
+The system SHALL communicate with LLM providers using the Vercel AI SDK unified interface via TypeScript service, with shared implementation logic in a base provider class to eliminate code duplication.
 
 #### Scenario: Successful API request with OpenAI
 - **WHEN** user instruction and code are sent to TypeScript service with OpenAI provider configured
@@ -21,6 +21,14 @@ The system SHALL communicate with LLM providers using the Vercel AI SDK unified 
 #### Scenario: API key validation
 - **WHEN** TypeScript service starts and required API key for configured provider is not set
 - **THEN** an error is logged and first request fails with clear error message
+
+#### Scenario: Base provider class eliminates duplication
+- **WHEN** a new provider is added to the system
+- **THEN** the provider implementation extends `BaseLLMProvider` and only implements provider-specific initialization logic (approximately 15-20 lines vs 150+ lines per provider)
+
+#### Scenario: Shared logging and error handling
+- **WHEN** any provider processes a request
+- **THEN** logging, timing, error handling, and markdown stripping are handled by shared base class methods
 
 ### Requirement: TypeScript Service Lifecycle
 The system SHALL manage a persistent TypeScript process for LLM communication using Vercel AI SDK.

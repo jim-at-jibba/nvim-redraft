@@ -28,13 +28,29 @@ export interface LLMProvider {
   ): Promise<string>;
 }
 
-class OpenAIProvider implements LLMProvider {
-  private model: string;
-  private apiKey: string;
+abstract class BaseLLMProvider implements LLMProvider {
+  protected model: string;
+  protected apiKey: string;
 
   constructor(apiKey: string, model: string) {
     this.apiKey = apiKey;
     this.model = model;
+  }
+
+  protected abstract createProviderInstance(): any;
+
+  protected getGenerateTextOptions(
+    method: "enhance" | "apply",
+    systemPrompt?: string,
+  ): Record<string, any> {
+    return {};
+  }
+
+  protected stripMarkdown(text: string): string {
+    const trimmed = text.trim();
+    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
+    const match = trimmed.match(codeBlockRegex);
+    return match ? match[1] : trimmed;
   }
 
   async enhanceInstruction(code: string, instruction: string): Promise<string> {
@@ -46,10 +62,13 @@ class OpenAIProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const openaiProvider = createOpenAI({ apiKey: this.apiKey });
+    const provider = this.createProviderInstance();
+
+    const options = this.getGenerateTextOptions("enhance");
 
     const result = await generateText({
-      model: openaiProvider(this.model),
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "system",
@@ -99,16 +118,20 @@ class OpenAIProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const openaiProvider = createOpenAI({ apiKey: this.apiKey });
+    const provider = this.createProviderInstance();
+
+    const defaultSystemPrompt =
+      "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
+
+    const options = this.getGenerateTextOptions("apply", systemPrompt);
 
     const result = await generateText({
-      model: openaiProvider(this.model),
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "system",
-          content:
-            systemPrompt ||
-            "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.",
+          content: systemPrompt || defaultSystemPrompt,
         },
         {
           role: "user",
@@ -141,144 +164,42 @@ class OpenAIProvider implements LLMProvider {
 
     return stripped;
   }
+}
 
-  private stripMarkdown(text: string): string {
-    const trimmed = text.trim();
-    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
-    const match = trimmed.match(codeBlockRegex);
-    return match ? match[1] : trimmed;
+class OpenAIProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createOpenAI({ apiKey: this.apiKey });
   }
 }
 
-class GLMProvider implements LLMProvider {
-  private model: string;
-  private apiKey: string;
-
-  constructor(apiKey: string, model: string) {
-    this.apiKey = apiKey;
-    this.model = model;
-  }
-
-  async enhanceInstruction(code: string, instruction: string): Promise<string> {
-    logger.debug(
-      "enhance-instruction",
-      `Enhancing instruction with ${this.model}`,
-    );
-    logger.debug("enhance-instruction", `Original: ${instruction}`);
-
-    const startTime = Date.now();
-
+class GLMProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
     const zhipuProvider = createZhipu({ apiKey: this.apiKey });
+    return (model: string) =>
+      zhipuProvider(model) as unknown as LanguageModel;
+  }
+}
 
-    const result = await generateText({
-      model: zhipuProvider(this.model) as unknown as LanguageModel,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a code editing assistant. Expand the user's brief instruction into a single, concise sentence in first person describing what changes to make. Be specific and direct. Example: 'I'm adding search functionality and keyboard navigation to the DataTable component.'",
-        },
-        {
-          role: "user",
-          content: `Instruction: ${instruction}\n\nCode:\n${code}\n\nExpand into one specific sentence:`,
-        },
-      ],
-    });
-
-    const elapsed = Date.now() - startTime;
-
-    if (!result.text) {
-      logger.error(
-        "enhance-instruction",
-        "No response from instruction enhancement",
-      );
-      throw new Error("No response from instruction enhancement");
-    }
-
-    const enhanced = result.text.trim();
-
-    logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
-    logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
-
-    if (result.usage) {
-      logger.debug(
-        "enhance-instruction",
-        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
-      );
-    }
-
-    return enhanced;
+class AnthropicProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createAnthropic({ apiKey: this.apiKey });
   }
 
-  async applyEdit(
-    code: string,
-    instruction: string,
+  protected getGenerateTextOptions(
+    method: "enhance" | "apply",
     systemPrompt?: string,
-  ): Promise<string> {
-    logger.debug("apply-edit", `Calling ${this.model} for edit`);
-    logger.debug("apply-edit", "Input code:", code);
-    logger.debug("apply-edit", "Instruction:", instruction);
+  ): Record<string, any> {
+    const options: Record<string, any> = {
+      maxOutputTokens: method === "enhance" ? 1024 : 4096,
+    };
 
-    const startTime = Date.now();
-
-    const zhipuProvider = createZhipu({ apiKey: this.apiKey });
-
-    const result = await generateText({
-      model: zhipuProvider(this.model) as unknown as LanguageModel,
-      messages: [
-        {
-          role: "system",
-          content:
-            systemPrompt ||
-            "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.",
-        },
-        {
-          role: "user",
-          content: `${instruction}\n\n${code}`,
-        },
-      ],
-    });
-
-    const elapsed = Date.now() - startTime;
-
-    if (!result.text) {
-      logger.error("apply-edit", "No response from edit");
-      throw new Error("No response from edit");
+    if (method === "apply") {
+      const defaultSystemPrompt =
+        "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
+      options.system = systemPrompt || defaultSystemPrompt;
     }
 
-    const stripped = this.stripMarkdown(result.text);
-
-    logger.debug("apply-edit", "Edited code:", stripped);
-    logger.info(
-      "apply-edit",
-      `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
-    );
-
-    if (result.usage) {
-      logger.debug(
-        "apply-edit",
-        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
-      );
-    }
-
-    return stripped;
-  }
-
-  private stripMarkdown(text: string): string {
-    const trimmed = text.trim();
-    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
-    const match = trimmed.match(codeBlockRegex);
-    return match ? match[1] : trimmed;
-  }
-}
-
-class AnthropicProvider implements LLMProvider {
-  private model: string;
-  private apiKey: string;
-
-  constructor(apiKey: string, model: string) {
-    this.apiKey = apiKey;
-    this.model = model;
+    return options;
   }
 
   async enhanceInstruction(code: string, instruction: string): Promise<string> {
@@ -290,11 +211,13 @@ class AnthropicProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const anthropicProvider = createAnthropic({ apiKey: this.apiKey });
+    const provider = this.createProviderInstance();
+
+    const options = this.getGenerateTextOptions("enhance");
 
     const result = await generateText({
-      model: anthropicProvider(this.model),
-      maxOutputTokens: 1024,
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "user",
@@ -346,16 +269,13 @@ Expand into one specific sentence:`,
 
     const startTime = Date.now();
 
-    const systemMessage =
-      systemPrompt ||
-      "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
+    const provider = this.createProviderInstance();
 
-    const anthropicProvider = createAnthropic({ apiKey: this.apiKey });
+    const options = this.getGenerateTextOptions("apply", systemPrompt);
 
     const result = await generateText({
-      model: anthropicProvider(this.model),
-      maxOutputTokens: 4096,
-      system: systemMessage,
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "user",
@@ -387,13 +307,6 @@ Expand into one specific sentence:`,
     }
 
     return stripped;
-  }
-
-  private stripMarkdown(text: string): string {
-    const trimmed = text.trim();
-    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
-    const match = trimmed.match(codeBlockRegex);
-    return match ? match[1] : trimmed;
   }
 }
 
