@@ -6,7 +6,10 @@ Get nvim-redraft running in 5 minutes.
 
 - Neovim >= 0.8.0
 - Node.js >= 18.0.0
-- MorphLLM API key
+- MorphLLM API key (for Fast Apply merging)
+- OpenAI API key (for edit generation)
+
+> **Why two keys?** This plugin uses a two-step approach: GPT-4o-mini generates sparse edits, then MorphLLM Fast Apply merges them accurately. This is faster and more reliable than full file rewrites.
 
 ## Installation
 
@@ -26,11 +29,14 @@ Add to your Neovim config:
 
 ## Setup
 
-1. **Get API Key**: Sign up at [morphllm.com](https://morphllm.com) and get your API key
+1. **Get API Keys**: 
+   - Sign up at [morphllm.com](https://morphllm.com) for MorphLLM API key
+   - Sign up at [platform.openai.com](https://platform.openai.com/api-keys) for OpenAI API key
 
-2. **Set Environment Variable**:
+2. **Set Environment Variables**:
    ```bash
-   echo 'export MORPH_API_KEY="your-api-key-here"' >> ~/.zshrc
+   echo 'export MORPH_API_KEY="your-morph-api-key-here"' >> ~/.zshrc
+   echo 'export OPENAI_API_KEY="your-openai-api-key-here"' >> ~/.zshrc
    source ~/.zshrc
    ```
 
@@ -65,8 +71,8 @@ def calculate(x, y):
 
 ## Troubleshooting
 
-**"MORPH_API_KEY not set"**
-- Make sure you exported the key and restarted Neovim
+**"MORPH_API_KEY not set" or "OPENAI_API_KEY not set"**
+- Make sure you exported both keys and restarted Neovim
 
 **"Failed to start TypeScript service"**
 - Run `cd ~/.local/share/nvim/lazy/nvim-redraft/ts && npm install && npm run build`

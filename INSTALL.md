@@ -21,13 +21,16 @@
 }
 ```
 
-### 2. Set API Key
+### 2. Set API Keys
 
-Add to your shell profile (`.bashrc`, `.zshrc`, etc.):
+Add both API keys to your shell profile (`.bashrc`, `.zshrc`, etc.):
 
 ```bash
-export MORPH_API_KEY="your-api-key-here"
+export MORPH_API_KEY="your-morph-api-key-here"
+export OPENAI_API_KEY="your-openai-api-key-here"
 ```
+
+> **Note:** The plugin requires both keys because it uses a two-step process: GPT-4o-mini generates sparse edits, then MorphLLM Fast Apply merges them into your code for optimal accuracy.
 
 Then reload your shell or source the file:
 
