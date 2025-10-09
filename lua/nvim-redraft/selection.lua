@@ -12,8 +12,8 @@ function M.get_visual_selection()
   local end_col = end_pos[3]
 
   if start_line == 0 or end_line == 0 then
-    logger.warn("selection", "No visual selection (start_line or end_line is 0)")
-    return nil, "No visual selection"
+    logger.warn("selection", "No active visual selection (start_line or end_line is 0)")
+    return nil, "No active visual selection"
   end
 
   local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
