@@ -25,11 +25,7 @@ function M.start(message)
       end
 
       local frame = spinner_frames[spinner_state.frame]
-      vim.api.nvim_echo(
-        { { string.format("%s %s", frame, message), "Normal" } },
-        false,
-        {}
-      )
+      vim.api.nvim_echo({ { string.format("%s %s", frame, message), "Normal" } }, false, {})
 
       spinner_state.frame = (spinner_state.frame % #spinner_frames) + 1
     end)
@@ -51,7 +47,7 @@ function M.stop(final_message)
 
   vim.schedule(function()
     vim.api.nvim_echo({ { "", "Normal" } }, false, {})
-    
+
     if final_message then
       vim.notify(final_message, vim.log.levels.INFO)
     end

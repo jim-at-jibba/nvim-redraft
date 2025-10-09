@@ -5,12 +5,7 @@ local M = {}
 function M.replace_selection(selection, new_text)
   logger.debug(
     "replace",
-    string.format(
-      "Replacing lines %d-%d with %d chars",
-      selection.start_line,
-      selection.end_line,
-      #new_text
-    )
+    string.format("Replacing lines %d-%d with %d chars", selection.start_line, selection.end_line, #new_text)
   )
 
   local lines = vim.split(new_text, "\n")

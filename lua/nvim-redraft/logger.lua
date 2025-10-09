@@ -33,7 +33,10 @@ function M.init(config)
   end)
 
   if not success then
-    vim.notify("[nvim-redraft] Failed to initialize log file: " .. M.log_file .. " - " .. tostring(err), vim.log.levels.ERROR)
+    vim.notify(
+      "[nvim-redraft] Failed to initialize log file: " .. M.log_file .. " - " .. tostring(err),
+      vim.log.levels.ERROR
+    )
     M.enabled = false
     return
   end
