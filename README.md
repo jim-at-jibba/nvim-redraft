@@ -77,7 +77,7 @@ export OPENAI_API_KEY="your-openai-api-key-here"
 export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
 
 # For GLM (Zhipu AI)
-export GLM_API_KEY="your-glm-api-key-here"
+export ZAI_API_KEY="your-glm-api-key-here"
 ```
 
 2. Install TypeScript dependencies:
@@ -202,23 +202,26 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key"
 
 **Note:** GLM models are generally slower than both OpenAI and Anthropic providers. Response times may be significantly longer for code editing tasks.
 
+**Note:** The `base_url` parameter is **required** for the GLM provider.
+
 ```lua
 require("nvim-redraft").setup({
   llm = {
     provider = "glm",
     model = "glm-4.5-airx",  -- Or "glm-4.6" etc.
+    base_url = "https://api.z.ai/api/paas/v4/",  -- Required: GLM API endpoint
   },
 })
 ```
 
 Set environment variable:
 ```bash
-export GLM_API_KEY="your-glm-api-key"
+export ZAI_API_KEY="your-glm-api-key"
 ```
 
 **Using GLM Coding Plan (Custom Base URL):**
 
-By default, the plugin uses GLM's standard API endpoint (`https://api.z.ai/api/paas/v4/`). If you have a GLM coding plan subscription with a different endpoint, you can specify a custom base URL:
+If you have a GLM coding plan subscription with a different endpoint, specify the custom base URL:
 
 ```lua
 require("nvim-redraft").setup({
@@ -285,7 +288,7 @@ end)
 
 - `OPENAI_API_KEY` - Your OpenAI API key (required if using OpenAI provider)
 - `ANTHROPIC_API_KEY` - Your Anthropic API key (required if using Anthropic provider)
-- `GLM_API_KEY` - Your GLM API key (required if using GLM provider)
+- `ZAI_API_KEY` - Your GLM API key (required if using GLM provider)
 
 You only need to set the API key for the provider you're using.
 
@@ -303,7 +306,7 @@ require("nvim-redraft").setup({
 
 Then check the log file at `~/.local/state/nvim/nvim-redraft.log` for detailed information about what's happening.
 
-### "OPENAI_API_KEY not set" or "ANTHROPIC_API_KEY not set" or "GLM_API_KEY not set" error
+### "OPENAI_API_KEY not set" or "ANTHROPIC_API_KEY not set" or "ZAI_API_KEY not set" error
 
 Make sure you've exported the API key for your chosen provider:
 
@@ -315,7 +318,7 @@ export OPENAI_API_KEY="your-openai-api-key"
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
 
 # For GLM
-export GLM_API_KEY="your-glm-api-key"
+export ZAI_API_KEY="your-glm-api-key"
 ```
 
 Add them to your `.bashrc`, `.zshrc`, or `.profile` to persist across sessions.

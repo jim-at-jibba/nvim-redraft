@@ -340,7 +340,7 @@ const PROVIDERS: Record<
 export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
-  glm: "ZHIPU_API_KEY",
+  glm: "ZAI_API_KEY",
 };
 
 /**
