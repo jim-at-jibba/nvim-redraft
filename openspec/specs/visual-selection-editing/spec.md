@@ -15,15 +15,19 @@ The system SHALL capture the currently selected text in visual mode when the use
 - **THEN** an error message is displayed and no AI request is made
 
 ### Requirement: User Instruction Prompt
-The system SHALL display an input prompt to collect editing instructions from the user.
+The system SHALL display a Snacks.nvim input prompt to collect editing instructions from the user.
 
 #### Scenario: User provides instruction
-- **WHEN** selection is captured and input prompt is shown
+- **WHEN** selection is captured and Snacks.input prompt is shown
 - **THEN** user can type natural language instructions and submit with Enter
 
 #### Scenario: User cancels prompt
 - **WHEN** user presses Escape or provides empty input
-- **THEN** the operation is cancelled with no changes made
+- **THEN** the Snacks.input closes and the operation is cancelled with no changes made
+
+#### Scenario: Input positioning
+- **WHEN** Snacks.input prompt is displayed
+- **THEN** the input appears relative to cursor position with configured styling (icon, title, border)
 
 ### Requirement: Inline Replacement
 The system SHALL replace the selected text with AI-generated output without confirmation.

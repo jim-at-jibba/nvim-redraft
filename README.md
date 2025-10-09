@@ -18,6 +18,7 @@ https://github.com/user-attachments/assets/0e14cf0e-6c63-457f-af40-7c30b64e83b6
 
 - Neovim >= 0.8.0
 - Node.js >= 18.0.0
+- [Snacks.nvim](https://github.com/folke/snacks.nvim) with input support
 - API key for at least one supported provider:
   - OpenAI API key ([get one here](https://platform.openai.com/api-keys))
   - Anthropic API key ([get one here](https://console.anthropic.com/))
@@ -28,6 +29,9 @@ https://github.com/user-attachments/assets/0e14cf0e-6c63-457f-af40-7c30b64e83b6
 ```lua
 {
   "jim-at-jibba/nvim-redraft",
+  dependencies = {
+    { "folke/snacks.nvim", opts = { input = {} } },
+  },
   config = function()
     require("nvim-redraft").setup({
       -- Optional configuration
@@ -45,7 +49,15 @@ https://github.com/user-attachments/assets/0e14cf0e-6c63-457f-af40-7c30b64e83b6
 
 ```lua
 use {
+  "folke/snacks.nvim",
+  config = function()
+    require("snacks").setup({ input = {} })
+  end,
+}
+
+use {
   "jim-at-jibba/nvim-redraft",
+  requires = { "folke/snacks.nvim" },
   config = function()
     require("nvim-redraft").setup()
   end,
@@ -140,6 +152,11 @@ function add(a, b) {
     model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, glm-4.5-airx for GLM)
     timeout = number,          -- Request timeout in milliseconds (default: 30000)
     base_url = string,         -- Custom base URL (optional, only for GLM provider)
+  },
+  input = {
+    prompt = string,           -- Input prompt text (default: "AI Edit: ")
+    icon = string,             -- Input icon (default: "󱚣")
+    win = table,               -- Snacks.input window options (relative, row, col, title_pos, etc.)
   },
   debug = boolean,             -- Enable debug logging (default: false)
   log_file = string,           -- Log file path (default: "~/.local/state/nvim/nvim-redraft.log")

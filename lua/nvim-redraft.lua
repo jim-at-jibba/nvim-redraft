@@ -32,6 +32,16 @@ Be intelligent about preserving code structure, indentation, and style.]],
     timeout = 30000,
     base_url = nil,
   },
+  input = {
+    prompt = "AI Edit: ",
+    icon = "󱚣",
+    win = {
+      title_pos = "left",
+      relative = "cursor",
+      row = -3,
+      col = 0,
+    },
+  },
   debug = false,
   log_file = vim.fn.stdpath("state") .. "/nvim-redraft.log",
   debug_max_log_size = 5000,
@@ -74,7 +84,7 @@ function M.edit()
     return
   end
 
-  input.get_instruction(function(instruction)
+  input.get_instruction(M.config, function(instruction)
     logger.debug("edit", "User instruction: " .. instruction)
     logger.debug("edit", "Selected code:", sel.text)
     logger.debug(
