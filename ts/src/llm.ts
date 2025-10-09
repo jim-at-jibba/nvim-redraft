@@ -330,7 +330,7 @@ const PROVIDERS: Record<
 > = {
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
-  glm: (apiKey, model, baseURL) => new GLMProvider(apiKey, model, baseURL),
+  zai: (apiKey, model, baseURL) => new GLMProvider(apiKey, model, baseURL),
 };
 
 /**
@@ -340,7 +340,7 @@ const PROVIDERS: Record<
 export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
-  glm: "ZAI_API_KEY",
+  zai: "ZAI_API_KEY",
 };
 
 /**
@@ -350,7 +350,7 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
 export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-20241022",
-  glm: "glm-4.5-airx",
+  zai: "glm-4.5-airx",
 };
 
 export function createProvider(
