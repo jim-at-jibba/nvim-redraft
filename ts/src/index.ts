@@ -80,9 +80,10 @@ class JSONRPCServer {
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logError(`Edit request failed: ${errorMessage}`);
       this.sendResponse({
         id: request.id,
-        error: `LLM request failed: ${errorMessage}`,
+        error: `Edit failed: ${errorMessage}`,
       });
     }
   }

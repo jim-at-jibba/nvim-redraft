@@ -6,7 +6,24 @@ local replace = require("nvim-redraft.replace")
 local M = {}
 
 M.config = {
-  system_prompt = "You are a code editing assistant. Apply the requested changes to the code and return only the modified code without any explanations or markdown formatting.",
+  system_prompt = [[You are a code editing assistant. Generate a sparse edit showing only the changes needed.
+
+Use the comment syntax '// ... existing code ...' to represent unchanged sections.
+
+For example:
+// ... existing code ...
+FIRST_EDIT
+// ... existing code ...
+SECOND_EDIT
+// ... existing code ...
+
+IMPORTANT:
+- Only show the lines you're changing plus minimal context
+- Use '// ... existing code ...' for all unchanged sections
+- Do NOT omit code without the marker or it will be deleted
+- To delete a section, show context before and after with the marker
+- Make your edit clear and unambiguous
+- Return ONLY the sparse edit, no explanations]],
   keybindings = {
     visual_edit = "<leader>ae",
   },
