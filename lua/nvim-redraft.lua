@@ -33,6 +33,7 @@ IMPORTANT:
     provider = "openai",
     model = "gpt-4o-mini",
     timeout = 30000,
+    base_url = nil,
   },
   debug = false,
   log_file = vim.fn.stdpath("state") .. "/nvim-redraft.log",
@@ -99,6 +100,7 @@ function M.edit()
       systemPrompt = M.config.system_prompt,
       provider = M.config.llm.provider,
       model = M.config.llm.model,
+      baseURL = M.config.llm.base_url,
     }, function(result, error)
       spinner.stop()
 

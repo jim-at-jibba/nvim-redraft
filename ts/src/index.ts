@@ -11,6 +11,7 @@ interface JSONRPCRequest {
     systemPrompt?: string;
     provider?: string;
     model?: string;
+    baseURL?: string;
   };
 }
 
@@ -77,7 +78,7 @@ class JSONRPCServer {
         return;
       }
 
-      const provider = createProvider(providerName, apiKey, modelName);
+      const provider = createProvider(providerName, apiKey, modelName, request.params.baseURL);
       const llmService = new LLMService(provider);
 
       const result = await llmService.edit({

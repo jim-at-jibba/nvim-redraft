@@ -150,10 +150,10 @@ class GLMProvider implements LLMProvider {
   private client: OpenAI;
   private model: string;
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, baseURL?: string) {
     this.client = new OpenAI({
       apiKey,
-      baseURL: "https://api.z.ai/api/paas/v4/",
+      baseURL: baseURL || "https://api.z.ai/api/paas/v4/",
     });
     this.model = model;
   }
@@ -398,11 +398,11 @@ Expand into one specific sentence:`,
  */
 const PROVIDERS: Record<
   string,
-  (apiKey: string, model: string) => LLMProvider
+  (apiKey: string, model: string, baseURL?: string) => LLMProvider
 > = {
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
-  glm: (apiKey, model) => new GLMProvider(apiKey, model),
+  glm: (apiKey, model, baseURL) => new GLMProvider(apiKey, model, baseURL),
 };
 
 /**
@@ -422,19 +422,20 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
 export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-20241022",
-  glm: "glm-4.5",
+  glm: "glm-4.5-airx",
 };
 
 export function createProvider(
   provider: string,
   apiKey: string,
   model: string,
+  baseURL?: string,
 ): LLMProvider {
   const factory = PROVIDERS[provider];
   if (!factory) {
     throw new Error(`Unknown provider: ${provider}`);
   }
-  return factory(apiKey, model);
+  return factory(apiKey, model, baseURL);
 }
 
 export function getApiKey(provider: string): string {
