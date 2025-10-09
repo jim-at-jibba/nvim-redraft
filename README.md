@@ -1,6 +1,6 @@
 # nvim-redraft
 
-A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic).
+A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic, GLM).
 
 ## Features
 
@@ -19,6 +19,7 @@ A Neovim plugin for AI-powered inline code editing with support for multiple LLM
 - API key for at least one supported provider:
   - OpenAI API key ([get one here](https://platform.openai.com/api-keys))
   - Anthropic API key ([get one here](https://console.anthropic.com/))
+  - GLM API key ([get one here](https://z.ai/model-api))
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
@@ -60,6 +61,9 @@ export OPENAI_API_KEY="your-openai-api-key-here"
 
 # For Anthropic
 export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
+
+# For GLM (Zhipu AI)
+export GLM_API_KEY="your-glm-api-key-here"
 ```
 
 2. Install TypeScript dependencies:
@@ -79,7 +83,7 @@ require("nvim-redraft").setup({
     visual_edit = "<leader>ae",
   },
   llm = {
-    provider = "openai",       -- "openai" or "anthropic"
+    provider = "openai",       -- "openai", "anthropic", or "glm"
     model = "gpt-4o-mini",     -- Model name (optional, uses provider default if omitted)
     timeout = 30000,
   },
@@ -130,9 +134,10 @@ function add(a, b) {
     visual_edit = string,      -- Keybinding for visual mode edit (default: "<leader>ae")
   },
   llm = {
-    provider = string,         -- LLM provider: "openai" or "anthropic" (default: "openai")
-    model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic)
+    provider = string,         -- LLM provider: "openai", "anthropic", or "glm" (default: "openai")
+    model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, glm-4.5-airx for GLM)
     timeout = number,          -- Request timeout in milliseconds (default: 30000)
+    base_url = string,         -- Custom base URL (optional, only for GLM provider)
   },
   debug = boolean,             -- Enable debug logging (default: false)
   log_file = string,           -- Log file path (default: "~/.local/state/nvim/nvim-redraft.log")
@@ -149,7 +154,7 @@ The plugin supports multiple LLM providers. Choose the one that best fits your n
 require("nvim-redraft").setup({
   llm = {
     provider = "openai",
-    model = "gpt-4o-mini",  -- Or "gpt-4o", "gpt-4-turbo", etc.
+    model = "gpt-4o-mini",  -- Or "gpt-4o" etc.
   },
 })
 ```
@@ -164,7 +169,7 @@ export OPENAI_API_KEY="your-openai-api-key"
 require("nvim-redraft").setup({
   llm = {
     provider = "anthropic",
-    model = "claude-3-5-sonnet-20241022",  -- Or other Claude models
+    model = "claude-3-7-sonnet-latest",  -- Or other Claude models
   },
 })
 ```
@@ -172,6 +177,38 @@ require("nvim-redraft").setup({
 Set environment variable:
 ```bash
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
+```
+
+#### GLM (Zhipu AI)
+
+**Note:** GLM models are generally slower than both OpenAI and Anthropic providers. Response times may be significantly longer for code editing tasks.
+
+```lua
+require("nvim-redraft").setup({
+  llm = {
+    provider = "glm",
+    model = "glm-4.5-airx",  -- Or "glm-4.6" etc.
+  },
+})
+```
+
+Set environment variable:
+```bash
+export GLM_API_KEY="your-glm-api-key"
+```
+
+**Using GLM Coding Plan (Custom Base URL):**
+
+By default, the plugin uses GLM's standard API endpoint (`https://api.z.ai/api/paas/v4/`). If you have a GLM coding plan subscription with a different endpoint, you can specify a custom base URL:
+
+```lua
+require("nvim-redraft").setup({
+  llm = {
+    provider = "glm",
+    model = "glm-4.6",
+    base_url = "https://api.z.ai/api/coding/paas/v4",  -- Custom endpoint for coding plan
+  },
+})
 ```
 
 ### Debug Logging
@@ -229,6 +266,7 @@ end)
 
 - `OPENAI_API_KEY` - Your OpenAI API key (required if using OpenAI provider)
 - `ANTHROPIC_API_KEY` - Your Anthropic API key (required if using Anthropic provider)
+- `GLM_API_KEY` - Your GLM API key (required if using GLM provider)
 
 You only need to set the API key for the provider you're using.
 
@@ -246,7 +284,7 @@ require("nvim-redraft").setup({
 
 Then check the log file at `~/.local/state/nvim/nvim-redraft.log` for detailed information about what's happening.
 
-### "OPENAI_API_KEY not set" or "ANTHROPIC_API_KEY not set" error
+### "OPENAI_API_KEY not set" or "ANTHROPIC_API_KEY not set" or "GLM_API_KEY not set" error
 
 Make sure you've exported the API key for your chosen provider:
 
@@ -256,6 +294,9 @@ export OPENAI_API_KEY="your-openai-api-key"
 
 # For Anthropic
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
+
+# For GLM
+export GLM_API_KEY="your-glm-api-key"
 ```
 
 Add them to your `.bashrc`, `.zshrc`, or `.profile` to persist across sessions.
