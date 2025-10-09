@@ -37,7 +37,7 @@ export class LLMService {
   async edit(request: EditRequest): Promise<string> {
     const { code, instruction, systemPrompt } = request;
 
-    logger.debug("llm", "Starting two-step edit process");
+    logger.debug("llm", "Starting edit process");
     logger.debug("llm", `Original instruction: ${instruction}`);
 
     try {
@@ -46,20 +46,14 @@ export class LLMService {
         instruction,
       );
 
-      const sparseEdit = await this.generateSparseEdit(
+      const editedCode = await this.applyEdit(
         code,
         enhancedInstruction,
         systemPrompt,
       );
 
-      const mergedCode = await this.applyEdit(
-        code,
-        enhancedInstruction,
-        sparseEdit,
-      );
-
-      logger.info("llm", "Two-step edit completed successfully");
-      return mergedCode;
+      logger.info("llm", "Edit completed successfully");
+      return editedCode;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       logger.error("llm", `Edit failed: ${errorMsg}`);
@@ -123,16 +117,14 @@ export class LLMService {
     return enhanced;
   }
 
-  private async generateSparseEdit(
+  private async applyEdit(
     code: string,
     instruction: string,
     systemPrompt?: string,
   ): Promise<string> {
-    logger.debug(
-      "generate-edit",
-      `Calling ${this.editModel} for sparse edit generation`,
-    );
-    logger.debug("generate-edit", "Input code:", code);
+    logger.debug("apply-edit", `Calling ${this.editModel} for edit`);
+    logger.debug("apply-edit", "Input code:", code);
+    logger.debug("apply-edit", "Instruction:", instruction);
 
     const startTime = Date.now();
 
@@ -143,11 +135,11 @@ export class LLMService {
           role: "system",
           content:
             systemPrompt ||
-            "You are a code editing assistant. Generate sparse edits with // ... existing code ... markers.",
+            "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.",
         },
         {
           role: "user",
-          content: `Instruction: ${instruction}\n\nCode:\n${code}`,
+          content: `${instruction}\n\n${code}`,
         },
       ],
     });
@@ -156,21 +148,21 @@ export class LLMService {
 
     const result = response.choices[0]?.message?.content;
     if (!result) {
-      logger.error("generate-edit", "No response from edit generation");
-      throw new Error("No response from edit generation");
+      logger.error("apply-edit", "No response from edit");
+      throw new Error("No response from edit");
     }
 
     const stripped = this.stripMarkdown(result);
 
-    logger.debug("generate-edit", "Generated sparse edit:", stripped);
+    logger.debug("apply-edit", "Edited code:", stripped);
     logger.info(
-      "generate-edit",
-      `Sparse edit generated in ${elapsed}ms (${stripped.length} chars)`,
+      "apply-edit",
+      `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
     );
 
     if (response.usage) {
       logger.debug(
-        "generate-edit",
+        "apply-edit",
         `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
       );
     }
@@ -178,59 +170,10 @@ export class LLMService {
     return stripped;
   }
 
-  private async applyEdit(
-    code: string,
-    instruction: string,
-    sparseEdit: string,
-  ): Promise<string> {
-    logger.debug(
-      "fast-apply",
-      `Calling MorphLLM ${this.model} for Fast Apply merge`,
-    );
-    logger.debug("fast-apply", "Original code:", code);
-    logger.debug("fast-apply", "Sparse edit to apply:", sparseEdit);
-
-    const startTime = Date.now();
-
-    const response = await this.morphClient.chat.completions.create({
-      model: this.model,
-      messages: [
-        {
-          role: "user",
-          content: `<instruction>${instruction}</instruction>\n<code>${code}</code>\n<update>${sparseEdit}</update>`,
-        },
-      ],
-    });
-
-    const elapsed = Date.now() - startTime;
-
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
-      logger.error("fast-apply", "No response from Fast Apply");
-      throw new Error("No response from Fast Apply");
-    }
-
-    const trimmed = result.trim();
-
-    logger.debug("fast-apply", "Merged code result:", trimmed);
-    logger.info(
-      "fast-apply",
-      `Fast Apply merge completed in ${elapsed}ms (${trimmed.length} chars)`,
-    );
-
-    if (response.usage) {
-      logger.debug(
-        "fast-apply",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
-      );
-    }
-
-    return trimmed;
-  }
-
   private stripMarkdown(text: string): string {
-    const codeBlockRegex = /^```(?:\w+)?\n([\s\S]*?)\n```$/;
-    const match = text.trim().match(codeBlockRegex);
-    return match ? match[1] : text;
+    const trimmed = text.trim();
+    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
+    const match = trimmed.match(codeBlockRegex);
+    return match ? match[1] : trimmed;
   }
 }
