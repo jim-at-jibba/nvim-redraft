@@ -42,6 +42,12 @@ export class LLMService {
       throw new Error("No response from LLM");
     }
 
-    return result;
+    return this.stripMarkdown(result);
+  }
+
+  private stripMarkdown(text: string): string {
+    const codeBlockRegex = /^```(?:\w+)?\n([\s\S]*?)\n```$/;
+    const match = text.trim().match(codeBlockRegex);
+    return match ? match[1] : text;
   }
 }
