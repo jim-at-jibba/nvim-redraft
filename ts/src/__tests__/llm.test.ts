@@ -12,7 +12,7 @@ describe("LLM Provider System", () => {
     it("should have all required provider keys", () => {
       expect(PROVIDER_API_KEYS.openai).toBe("OPENAI_API_KEY");
       expect(PROVIDER_API_KEYS.anthropic).toBe("ANTHROPIC_API_KEY");
-      expect(PROVIDER_API_KEYS.glm).toBe("GLM_API_KEY");
+      expect(PROVIDER_API_KEYS.glm).toBe("ZHIPU_API_KEY");
     });
   });
 
@@ -46,7 +46,7 @@ describe("LLM Provider System", () => {
     });
 
     it("should get GLM API key from environment", () => {
-      process.env.GLM_API_KEY = "test-glm-key";
+      process.env.ZHIPU_API_KEY = "test-glm-key";
       expect(getApiKey("glm")).toBe("test-glm-key");
     });
 
@@ -104,8 +104,7 @@ describe("LLM Provider System", () => {
       const provider = createProvider(
         "glm",
         "test-key",
-        "glm-4.5-airx",
-        "https://custom.api.com/"
+        "glm-4.5-airx"
       );
       expect(provider).toBeDefined();
     });
@@ -183,8 +182,7 @@ describe("Provider markdown stripping", () => {
       const customProvider = createProvider(
         "glm",
         "test-key",
-        "glm-4.5-airx",
-        "https://custom.api.com/"
+        "glm-4.5-airx"
       );
       expect(customProvider).toBeDefined();
     });

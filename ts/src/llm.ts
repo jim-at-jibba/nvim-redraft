@@ -1,5 +1,7 @@
-import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText, LanguageModel } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createZhipu } from "zhipu-ai-provider";
 import { logger } from "./logger";
 
 export interface EditRequest {
@@ -27,11 +29,11 @@ export interface LLMProvider {
 }
 
 class OpenAIProvider implements LLMProvider {
-  private client: OpenAI;
   private model: string;
+  private apiKey: string;
 
   constructor(apiKey: string, model: string) {
-    this.client = new OpenAI({ apiKey });
+    this.apiKey = apiKey;
     this.model = model;
   }
 
@@ -44,8 +46,10 @@ class OpenAIProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
+    const openaiProvider = createOpenAI({ apiKey: this.apiKey });
+
+    const result = await generateText({
+      model: openaiProvider(this.model),
       messages: [
         {
           role: "system",
@@ -61,8 +65,7 @@ class OpenAIProvider implements LLMProvider {
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
+    if (!result.text) {
       logger.error(
         "enhance-instruction",
         "No response from instruction enhancement",
@@ -70,15 +73,15 @@ class OpenAIProvider implements LLMProvider {
       throw new Error("No response from instruction enhancement");
     }
 
-    const enhanced = result.trim();
+    const enhanced = result.text.trim();
 
     logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
     logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "enhance-instruction",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -96,8 +99,10 @@ class OpenAIProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
+    const openaiProvider = createOpenAI({ apiKey: this.apiKey });
+
+    const result = await generateText({
+      model: openaiProvider(this.model),
       messages: [
         {
           role: "system",
@@ -114,13 +119,12 @@ class OpenAIProvider implements LLMProvider {
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
+    if (!result.text) {
       logger.error("apply-edit", "No response from edit");
       throw new Error("No response from edit");
     }
 
-    const stripped = this.stripMarkdown(result);
+    const stripped = this.stripMarkdown(result.text);
 
     logger.debug("apply-edit", "Edited code:", stripped);
     logger.info(
@@ -128,10 +132,10 @@ class OpenAIProvider implements LLMProvider {
       `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
     );
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "apply-edit",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -147,14 +151,11 @@ class OpenAIProvider implements LLMProvider {
 }
 
 class GLMProvider implements LLMProvider {
-  private client: OpenAI;
   private model: string;
+  private apiKey: string;
 
-  constructor(apiKey: string, model: string, baseURL?: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: baseURL || "https://api.z.ai/api/paas/v4/",
-    });
+  constructor(apiKey: string, model: string) {
+    this.apiKey = apiKey;
     this.model = model;
   }
 
@@ -167,8 +168,10 @@ class GLMProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
+    const zhipuProvider = createZhipu({ apiKey: this.apiKey });
+
+    const result = await generateText({
+      model: zhipuProvider(this.model) as unknown as LanguageModel,
       messages: [
         {
           role: "system",
@@ -184,8 +187,7 @@ class GLMProvider implements LLMProvider {
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
+    if (!result.text) {
       logger.error(
         "enhance-instruction",
         "No response from instruction enhancement",
@@ -193,15 +195,15 @@ class GLMProvider implements LLMProvider {
       throw new Error("No response from instruction enhancement");
     }
 
-    const enhanced = result.trim();
+    const enhanced = result.text.trim();
 
     logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
     logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "enhance-instruction",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -219,8 +221,10 @@ class GLMProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
+    const zhipuProvider = createZhipu({ apiKey: this.apiKey });
+
+    const result = await generateText({
+      model: zhipuProvider(this.model) as unknown as LanguageModel,
       messages: [
         {
           role: "system",
@@ -237,13 +241,12 @@ class GLMProvider implements LLMProvider {
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
+    if (!result.text) {
       logger.error("apply-edit", "No response from edit");
       throw new Error("No response from edit");
     }
 
-    const stripped = this.stripMarkdown(result);
+    const stripped = this.stripMarkdown(result.text);
 
     logger.debug("apply-edit", "Edited code:", stripped);
     logger.info(
@@ -251,10 +254,10 @@ class GLMProvider implements LLMProvider {
       `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
     );
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "apply-edit",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -270,11 +273,11 @@ class GLMProvider implements LLMProvider {
 }
 
 class AnthropicProvider implements LLMProvider {
-  private client: Anthropic;
   private model: string;
+  private apiKey: string;
 
   constructor(apiKey: string, model: string) {
-    this.client = new Anthropic({ apiKey });
+    this.apiKey = apiKey;
     this.model = model;
   }
 
@@ -287,9 +290,11 @@ class AnthropicProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 1024,
+    const anthropicProvider = createAnthropic({ apiKey: this.apiKey });
+
+    const result = await generateText({
+      model: anthropicProvider(this.model),
+      maxOutputTokens: 1024,
       messages: [
         {
           role: "user",
@@ -307,8 +312,7 @@ Expand into one specific sentence:`,
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.content[0];
-    if (!result || result.type !== "text") {
+    if (!result.text) {
       logger.error(
         "enhance-instruction",
         "No response from instruction enhancement",
@@ -321,10 +325,10 @@ Expand into one specific sentence:`,
     logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
     logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "enhance-instruction",
-        `Token usage - input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -346,9 +350,11 @@ Expand into one specific sentence:`,
       systemPrompt ||
       "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 4096,
+    const anthropicProvider = createAnthropic({ apiKey: this.apiKey });
+
+    const result = await generateText({
+      model: anthropicProvider(this.model),
+      maxOutputTokens: 4096,
       system: systemMessage,
       messages: [
         {
@@ -360,8 +366,7 @@ Expand into one specific sentence:`,
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.content[0];
-    if (!result || result.type !== "text") {
+    if (!result.text) {
       logger.error("apply-edit", "No response from edit");
       throw new Error("No response from edit");
     }
@@ -374,10 +379,10 @@ Expand into one specific sentence:`,
       `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
     );
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "apply-edit",
-        `Token usage - input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -398,11 +403,11 @@ Expand into one specific sentence:`,
  */
 const PROVIDERS: Record<
   string,
-  (apiKey: string, model: string, baseURL?: string) => LLMProvider
+  (apiKey: string, model: string) => LLMProvider
 > = {
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
-  glm: (apiKey, model, baseURL) => new GLMProvider(apiKey, model, baseURL),
+  glm: (apiKey, model) => new GLMProvider(apiKey, model),
 };
 
 /**
@@ -412,7 +417,7 @@ const PROVIDERS: Record<
 export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
-  glm: "GLM_API_KEY",
+  glm: "ZHIPU_API_KEY",
 };
 
 /**
@@ -429,13 +434,12 @@ export function createProvider(
   provider: string,
   apiKey: string,
   model: string,
-  baseURL?: string,
 ): LLMProvider {
   const factory = PROVIDERS[provider];
   if (!factory) {
     throw new Error(`Unknown provider: ${provider}`);
   }
-  return factory(apiKey, model, baseURL);
+  return factory(apiKey, model);
 }
 
 export function getApiKey(provider: string): string {

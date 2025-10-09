@@ -78,7 +78,7 @@ class JSONRPCServer {
         return;
       }
 
-      const provider = createProvider(providerName, apiKey, modelName, request.params.baseURL);
+      const provider = createProvider(providerName, apiKey, modelName);
       const llmService = new LLMService(provider);
 
       const result = await llmService.edit({

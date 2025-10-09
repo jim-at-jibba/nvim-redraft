@@ -1,8 +1,5 @@
-# ai-llm-integration Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-inline-ai-editing. Update Purpose after archive.
-## Requirements
 ### Requirement: MorphLLM API Integration
 The system SHALL communicate with LLM providers using the Vercel AI SDK unified interface via TypeScript service.
 
@@ -36,28 +33,6 @@ The system SHALL manage a persistent TypeScript process for LLM communication us
 #### Scenario: Service cleanup
 - **WHEN** Neovim exits or plugin is unloaded
 - **THEN** TypeScript service process is terminated gracefully
-
-### Requirement: JSON-RPC Communication
-The system SHALL use JSON-RPC over stdio for Lua-TypeScript IPC.
-
-#### Scenario: Request-response matching
-- **WHEN** Lua sends a request with id
-- **THEN** TypeScript response includes matching id for correlation
-
-#### Scenario: Concurrent request handling
-- **WHEN** multiple AI edits are triggered in quick succession
-- **THEN** requests are queued and processed in order with distinct ids
-
-### Requirement: Request Timeout
-The system SHALL enforce configurable timeouts for LLM requests.
-
-#### Scenario: Request completes within timeout
-- **WHEN** LLM responds before timeout (default 30s)
-- **THEN** response is processed normally
-
-#### Scenario: Request exceeds timeout
-- **WHEN** LLM does not respond within timeout
-- **THEN** request is cancelled and timeout error is shown to user
 
 ### Requirement: Response Extraction
 The system SHALL extract edited code from Vercel AI SDK response for replacement.
@@ -97,3 +72,9 @@ The system SHALL allow users to configure LLM provider, model, and timeout using
 - **WHEN** user does not specify `llm.model` and provider is "glm"
 - **THEN** requests use "glm-4.5-airx" as default model via Vercel AI SDK
 
+## REMOVED Requirements
+
+### Requirement: Prompt Format
+**Reason**: Vercel AI SDK uses standard messages array format instead of custom tagged format
+
+**Migration**: The system now uses standard message objects with `role` and `content` fields as defined by Vercel AI SDK, eliminating the need for `<instruction>`, `<code>`, and `<update>` tags
