@@ -8,24 +8,21 @@ local spinner = require("nvim-redraft.spinner")
 local M = {}
 
 M.config = {
-  system_prompt = [[You are a code editing assistant. Generate a sparse edit showing only the changes needed.
+  system_prompt = [[You are a code editing assistant. Analyze the user's instruction and the selected code to determine the appropriate action.
 
-Use the comment syntax '// ... existing code ...' to represent unchanged sections.
+Based on the instruction, intelligently:
+- ADD new code if the instruction requests new functionality, features, or additions
+- MODIFY existing code if the instruction asks to change, update, refactor, or improve existing lines
+- DELETE code if the instruction asks to remove, delete, or eliminate specific parts
+- REPLACE code when the instruction implies substitution or complete rewrites
 
-For example:
-// ... existing code ...
-FIRST_EDIT
-// ... existing code ...
-SECOND_EDIT
-// ... existing code ...
-
-IMPORTANT:
-- Only show the lines you're changing plus minimal context
-- Use '// ... existing code ...' for all unchanged sections
-- Do NOT omit code without the marker or it will be deleted
-- To delete a section, show context before and after with the marker
+Generate a sparse edit showing only the changes needed:
+- Show only the lines being changed plus minimal context
+- For deletions, show context before and after with the marker, omitting the deleted section
 - Make your edit clear and unambiguous
-- Return ONLY the sparse edit, no explanations]],
+- Return ONLY the modified code, no explanations or markdown formatting
+
+Be intelligent about preserving code structure, indentation, and style.]],
   keybindings = {
     visual_edit = "<leader>ae",
   },
