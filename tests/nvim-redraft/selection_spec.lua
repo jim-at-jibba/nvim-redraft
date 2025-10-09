@@ -1,0 +1,37 @@
+local selection = require("nvim-redraft.selection")
+
+describe("selection", function()
+  before_each(function()
+    vim.cmd("enew!")
+  end)
+
+  describe("get_visual_selection", function()
+    it("should return error when not in visual mode", function()
+      local result, err = selection.get_visual_selection()
+      assert.is_nil(result)
+      assert.equals("No active visual selection", err)
+    end)
+
+    it("should capture single line selection", function()
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "hello world" })
+      vim.cmd("normal! gg0vee")
+
+      local result = selection.get_visual_selection()
+      assert.is_not_nil(result)
+      assert.equals("hello world", result.text)
+      assert.equals(1, result.start_line)
+      assert.equals(1, result.end_line)
+    end)
+
+    it("should capture multi-line selection", function()
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "line 1", "line 2", "line 3" })
+      vim.cmd("normal! ggVjj")
+
+      local result = selection.get_visual_selection()
+      assert.is_not_nil(result)
+      assert.equals("line 1\nline 2\nline 3", result.text)
+      assert.equals(1, result.start_line)
+      assert.equals(3, result.end_line)
+    end)
+  end)
+end)
