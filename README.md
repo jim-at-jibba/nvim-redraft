@@ -2,10 +2,6 @@
 
 A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic).
 
-## How It Works
-
-The plugin generates sparse edits showing only the changes needed, using `// ... existing code ...` markers to represent unchanged sections. This approach is faster and more reliable than full file rewrites, handling large selections efficiently while maintaining precision.
-
 ## Features
 
 - Select code in visual mode and apply AI edits inline
@@ -28,7 +24,7 @@ The plugin generates sparse edits showing only the changes needed, using `// ...
 
 ```lua
 {
-  "yourusername/vim-redraft",
+  "jim-at-jibba/nvim-redraft",
   config = function()
     require("nvim-redraft").setup({
       -- Optional configuration
@@ -46,7 +42,7 @@ The plugin generates sparse edits showing only the changes needed, using `// ...
 
 ```lua
 use {
-  "yourusername/nvim-redraft",
+  "jim-at-jibba/nvim-redraft",
   config = function()
     require("nvim-redraft").setup()
   end,
