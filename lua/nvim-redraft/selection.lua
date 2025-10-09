@@ -25,7 +25,7 @@ function M.get_visual_selection()
 
   local mode = vim.fn.visualmode()
   logger.debug("selection", string.format("Visual mode: %s, lines: %d", mode, #lines))
-  
+
   if mode == "V" then
     -- Visual line mode - don't trim columns
   elseif #lines == 1 then
