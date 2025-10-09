@@ -66,14 +66,13 @@ function M.edit()
   local start_time = vim.loop.hrtime()
   logger.info("edit", "Edit operation started")
 
+  vim.cmd('normal! "vy')
   local sel, err = selection.get_visual_selection()
   if not sel then
     logger.error("edit", "Failed to get selection: " .. err)
     vim.notify("[nvim-redraft] " .. err, vim.log.levels.ERROR)
     return
   end
-
-  vim.cmd("normal! gv")
 
   input.get_instruction(function(instruction)
     logger.debug("edit", "User instruction: " .. instruction)
