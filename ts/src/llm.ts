@@ -1,7 +1,6 @@
 import { generateText, LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createZhipu } from "zhipu-ai-provider";
 import { logger } from "./logger";
 
 export interface EditRequest {
@@ -172,24 +171,6 @@ class OpenAIProvider extends BaseLLMProvider {
   }
 }
 
-class GLMProvider extends BaseLLMProvider {
-  private baseURL?: string;
-
-  constructor(apiKey: string, model: string, baseURL?: string) {
-    super(apiKey, model);
-    this.baseURL = baseURL;
-  }
-
-  protected createProviderInstance() {
-    const zhipuProvider = createZhipu({
-      apiKey: this.apiKey,
-      baseURL: this.baseURL,
-    });
-    return (model: string) =>
-      zhipuProvider(model) as unknown as LanguageModel;
-  }
-}
-
 class AnthropicProvider extends BaseLLMProvider {
   protected createProviderInstance() {
     return createAnthropic({ apiKey: this.apiKey });
@@ -330,7 +311,6 @@ const PROVIDERS: Record<
 > = {
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
-  zai: (apiKey, model, baseURL) => new GLMProvider(apiKey, model, baseURL),
 };
 
 /**
@@ -340,7 +320,6 @@ const PROVIDERS: Record<
 export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
-  zai: "ZAI_API_KEY",
 };
 
 /**
@@ -350,7 +329,6 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
 export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-20241022",
-  zai: "glm-4.5-airx",
 };
 
 export function createProvider(

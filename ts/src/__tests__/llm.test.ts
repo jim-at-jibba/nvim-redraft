@@ -12,7 +12,6 @@ describe("LLM Provider System", () => {
     it("should have all required provider keys", () => {
       expect(PROVIDER_API_KEYS.openai).toBe("OPENAI_API_KEY");
       expect(PROVIDER_API_KEYS.anthropic).toBe("ANTHROPIC_API_KEY");
-      expect(PROVIDER_API_KEYS.zai).toBe("ZAI_API_KEY");
     });
   });
 
@@ -20,7 +19,6 @@ describe("LLM Provider System", () => {
     it("should have default models for all providers", () => {
       expect(DEFAULT_MODELS.openai).toBe("gpt-4o-mini");
       expect(DEFAULT_MODELS.anthropic).toBe("claude-3-5-sonnet-20241022");
-      expect(DEFAULT_MODELS.zai).toBe("glm-4.5-airx");
     });
   });
 
@@ -45,11 +43,6 @@ describe("LLM Provider System", () => {
       expect(getApiKey("anthropic")).toBe("test-anthropic-key");
     });
 
-    it("should get ZAI API key from environment", () => {
-      process.env.ZAI_API_KEY = "test-zai-key";
-      expect(getApiKey("zai")).toBe("test-zai-key");
-    });
-
     it("should throw error for unknown provider", () => {
       expect(() => getApiKey("unknown")).toThrow("Unknown provider: unknown");
     });
@@ -66,7 +59,6 @@ describe("LLM Provider System", () => {
     it("should return default model for known provider", () => {
       expect(getDefaultModel("openai")).toBe("gpt-4o-mini");
       expect(getDefaultModel("anthropic")).toBe("claude-3-5-sonnet-20241022");
-      expect(getDefaultModel("zai")).toBe("glm-4.5-airx");
     });
 
     it("should return empty string for unknown provider", () => {
@@ -91,22 +83,6 @@ describe("LLM Provider System", () => {
       expect(provider).toBeDefined();
       expect(provider.enhanceInstruction).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
-    });
-
-    it("should create ZAI provider with default base URL", () => {
-      const provider = createProvider("zai", "test-key", "glm-4.5-airx");
-      expect(provider).toBeDefined();
-      expect(provider.enhanceInstruction).toBeDefined();
-      expect(provider.applyEdit).toBeDefined();
-    });
-
-    it("should create ZAI provider with custom base URL", () => {
-      const provider = createProvider(
-        "zai",
-        "test-key",
-        "glm-4.5-airx"
-      );
-      expect(provider).toBeDefined();
     });
 
     it("should throw error for unknown provider", () => {
@@ -165,29 +141,6 @@ describe("Provider markdown stripping", () => {
     });
   });
 
-  describe("ZAI Provider", () => {
-    let provider: any;
-
-    beforeEach(() => {
-      provider = createProvider("zai", "test-key", "glm-4.5-airx");
-    });
-
-    it("should strip markdown code blocks", () => {
-      const input = "```python\nprint('hello')\n```";
-      const result = (provider as any).stripMarkdown(input);
-      expect(result).toBe("print('hello')");
-    });
-
-    it("should use custom base URL when provided", () => {
-      const customProvider = createProvider(
-        "zai",
-        "test-key",
-        "glm-4.5-airx"
-      );
-      expect(customProvider).toBeDefined();
-    });
-  });
-
   describe("Anthropic Provider", () => {
     let provider: any;
 
@@ -220,12 +173,6 @@ describe("Provider interfaces", () => {
       "test-key",
       "claude-3-5-sonnet-20241022"
     );
-    expect(typeof provider.enhanceInstruction).toBe("function");
-    expect(typeof provider.applyEdit).toBe("function");
-  });
-
-  it("should implement LLMProvider interface - ZAI", () => {
-    const provider = createProvider("zai", "test-key", "glm-4.5-airx");
     expect(typeof provider.enhanceInstruction).toBe("function");
     expect(typeof provider.applyEdit).toBe("function");
   });
