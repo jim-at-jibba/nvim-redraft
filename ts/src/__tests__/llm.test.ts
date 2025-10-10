@@ -78,7 +78,6 @@ describe("LLM Provider System", () => {
     it("should create OpenAI provider", () => {
       const provider = createProvider("openai", "test-key", "gpt-4o-mini");
       expect(provider).toBeDefined();
-      expect(provider.enhanceInstruction).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
     });
 
@@ -89,14 +88,12 @@ describe("LLM Provider System", () => {
         "claude-3-5-sonnet-20241022"
       );
       expect(provider).toBeDefined();
-      expect(provider.enhanceInstruction).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
     });
 
     it("should create xAI provider", () => {
       const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
       expect(provider).toBeDefined();
-      expect(provider.enhanceInstruction).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
     });
 
@@ -178,7 +175,6 @@ describe("Provider markdown stripping", () => {
 describe("Provider interfaces", () => {
   it("should implement LLMProvider interface - OpenAI", () => {
     const provider = createProvider("openai", "test-key", "gpt-4o-mini");
-    expect(typeof provider.enhanceInstruction).toBe("function");
     expect(typeof provider.applyEdit).toBe("function");
   });
 
@@ -188,13 +184,11 @@ describe("Provider interfaces", () => {
       "test-key",
       "claude-3-5-sonnet-20241022"
     );
-    expect(typeof provider.enhanceInstruction).toBe("function");
     expect(typeof provider.applyEdit).toBe("function");
   });
 
   it("should implement LLMProvider interface - xAI", () => {
     const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
-    expect(typeof provider.enhanceInstruction).toBe("function");
     expect(typeof provider.applyEdit).toBe("function");
   });
 });

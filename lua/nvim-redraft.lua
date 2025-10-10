@@ -31,6 +31,7 @@ Be intelligent about preserving code structure, indentation, and style.]],
     model = nil,
     timeout = 30000,
     base_url = nil,
+    max_output_tokens = nil,
   },
   input = {
     prompt = "AI Edit: ",
@@ -108,6 +109,7 @@ function M.edit()
       provider = M.config.llm.provider,
       model = M.config.llm.model,
       baseURL = M.config.llm.base_url,
+      maxOutputTokens = M.config.llm.max_output_tokens,
     }, function(result, error)
       spinner.stop()
 
@@ -118,7 +120,7 @@ function M.edit()
         return
       end
 
-      logger.debug("edit", "Merged code result:", result)
+      logger.debug("edit", "Final result:", result)
 
       replace.replace_selection(sel, result)
 

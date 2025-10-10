@@ -94,6 +94,7 @@ require("nvim-redraft").setup({
     provider = "openai",       -- "openai", "anthropic", or "xai"
     model = "gpt-4o-mini",     -- Model name (optional, uses provider default if omitted)
     timeout = 30000,
+    max_output_tokens = 4096,  -- Maximum tokens in LLM response (optional, default: 4096)
   },
 })
 ```
@@ -145,6 +146,7 @@ function add(a, b) {
     provider = string,         -- LLM provider: "openai", "anthropic", or "xai" (default: "openai")
     model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, grok-4-fast-non-reasoning for xAI)
     timeout = number,          -- Request timeout in milliseconds (default: 30000)
+    max_output_tokens = number,-- Maximum tokens in LLM response (default: 4096)
   },
   input = {
     prompt = string,           -- Input prompt text (default: "AI Edit: ")

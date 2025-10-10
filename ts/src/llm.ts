@@ -20,7 +20,6 @@ export interface EditRequest {
  * 4. Add the default model to DEFAULT_MODELS registry
  */
 export interface LLMProvider {
-  enhanceInstruction(code: string, instruction: string): Promise<string>;
   applyEdit(
     code: string,
     instruction: string,
@@ -31,10 +30,12 @@ export interface LLMProvider {
 abstract class BaseLLMProvider implements LLMProvider {
   protected model: string;
   protected apiKey: string;
+  protected maxOutputTokens: number;
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, maxOutputTokens?: number) {
     this.apiKey = apiKey;
     this.model = model;
+    this.maxOutputTokens = maxOutputTokens || 4096;
   }
 
   protected abstract createProviderInstance(): any;
@@ -53,60 +54,6 @@ abstract class BaseLLMProvider implements LLMProvider {
     return match ? match[1] : trimmed;
   }
 
-  async enhanceInstruction(code: string, instruction: string): Promise<string> {
-    logger.debug(
-      "enhance-instruction",
-      `Enhancing instruction with ${this.model}`,
-    );
-    logger.debug("enhance-instruction", `Original: ${instruction}`);
-
-    const startTime = Date.now();
-
-    const provider = this.createProviderInstance();
-
-    const options = this.getGenerateTextOptions("enhance");
-
-    const result = await generateText({
-      model: provider(this.model),
-      ...options,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a code editing assistant. Expand the user's brief instruction into a single, concise sentence in first person describing what changes to make. Be specific and direct. Example: 'I'm adding search functionality and keyboard navigation to the DataTable component.'",
-        },
-        {
-          role: "user",
-          content: `Instruction: ${instruction}\n\nCode:\n${code}\n\nExpand into one specific sentence:`,
-        },
-      ],
-    });
-
-    const elapsed = Date.now() - startTime;
-
-    if (!result.text) {
-      logger.error(
-        "enhance-instruction",
-        "No response from instruction enhancement",
-      );
-      throw new Error("No response from instruction enhancement");
-    }
-
-    const enhanced = result.text.trim();
-
-    logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
-    logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
-
-    if (result.usage) {
-      logger.debug(
-        "enhance-instruction",
-        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
-      );
-    }
-
-    return enhanced;
-  }
-
   async applyEdit(
     code: string,
     instruction: string,
@@ -121,7 +68,7 @@ abstract class BaseLLMProvider implements LLMProvider {
     const provider = this.createProviderInstance();
 
     const defaultSystemPrompt =
-      "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
+      "You are a code editing assistant. Apply the user's requested changes to the code and return ONLY the modified code. Handle both brief instructions (e.g., 'add error handling') and detailed instructions equally well. Be precise and maintain code quality. Do not include explanations, markdown formatting, or any text before or after the code.";
 
     const options = this.getGenerateTextOptions("apply", systemPrompt);
 
@@ -170,6 +117,15 @@ class OpenAIProvider extends BaseLLMProvider {
   protected createProviderInstance() {
     return createOpenAI({ apiKey: this.apiKey });
   }
+
+  protected getGenerateTextOptions(
+    method: "enhance" | "apply",
+    systemPrompt?: string,
+  ): Record<string, any> {
+    return {
+      maxOutputTokens: this.maxOutputTokens,
+    };
+  }
 }
 
 class AnthropicProvider extends BaseLLMProvider {
@@ -182,72 +138,14 @@ class AnthropicProvider extends BaseLLMProvider {
     systemPrompt?: string,
   ): Record<string, any> {
     const options: Record<string, any> = {
-      maxOutputTokens: method === "enhance" ? 1024 : 4096,
+      maxOutputTokens: this.maxOutputTokens,
     };
 
-    if (method === "apply") {
-      const defaultSystemPrompt =
-        "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
-      options.system = systemPrompt || defaultSystemPrompt;
-    }
+    const defaultSystemPrompt =
+      "You are a code editing assistant. Apply the user's requested changes to the code and return ONLY the modified code. Handle both brief instructions (e.g., 'add error handling') and detailed instructions equally well. Be precise and maintain code quality. Do not include explanations, markdown formatting, or any text before or after the code.";
+    options.system = systemPrompt || defaultSystemPrompt;
 
     return options;
-  }
-
-  async enhanceInstruction(code: string, instruction: string): Promise<string> {
-    logger.debug(
-      "enhance-instruction",
-      `Enhancing instruction with ${this.model}`,
-    );
-    logger.debug("enhance-instruction", `Original: ${instruction}`);
-
-    const startTime = Date.now();
-
-    const provider = this.createProviderInstance();
-
-    const options = this.getGenerateTextOptions("enhance");
-
-    const result = await generateText({
-      model: provider(this.model),
-      ...options,
-      messages: [
-        {
-          role: "user",
-          content: `You are a code editing assistant. Expand the user's brief instruction into a single, concise sentence in first person describing what changes to make. Be specific and direct. Example: 'I'm adding search functionality and keyboard navigation to the DataTable component.'
-
-Instruction: ${instruction}
-
-Code:
-${code}
-
-Expand into one specific sentence:`,
-        },
-      ],
-    });
-
-    const elapsed = Date.now() - startTime;
-
-    if (!result.text) {
-      logger.error(
-        "enhance-instruction",
-        "No response from instruction enhancement",
-      );
-      throw new Error("No response from instruction enhancement");
-    }
-
-    const enhanced = result.text.trim();
-
-    logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
-    logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
-
-    if (result.usage) {
-      logger.debug(
-        "enhance-instruction",
-        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
-      );
-    }
-
-    return enhanced;
   }
 
   async applyEdit(
@@ -306,6 +204,15 @@ class XaiProvider extends BaseLLMProvider {
   protected createProviderInstance() {
     return createXai({ apiKey: this.apiKey });
   }
+
+  protected getGenerateTextOptions(
+    method: "enhance" | "apply",
+    systemPrompt?: string,
+  ): Record<string, any> {
+    return {
+      maxOutputTokens: this.maxOutputTokens,
+    };
+  }
 }
 
 /**
@@ -314,11 +221,11 @@ class XaiProvider extends BaseLLMProvider {
  */
 const PROVIDERS: Record<
   string,
-  (apiKey: string, model: string, baseURL?: string) => LLMProvider
+  (apiKey: string, model: string, baseURL?: string, maxOutputTokens?: number) => LLMProvider
 > = {
-  openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
-  anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
-  xai: (apiKey, model) => new XaiProvider(apiKey, model),
+  openai: (apiKey, model, baseURL, maxOutputTokens) => new OpenAIProvider(apiKey, model, maxOutputTokens),
+  anthropic: (apiKey, model, baseURL, maxOutputTokens) => new AnthropicProvider(apiKey, model, maxOutputTokens),
+  xai: (apiKey, model, baseURL, maxOutputTokens) => new XaiProvider(apiKey, model, maxOutputTokens),
 };
 
 /**
@@ -346,12 +253,13 @@ export function createProvider(
   apiKey: string,
   model: string,
   baseURL?: string,
+  maxOutputTokens?: number,
 ): LLMProvider {
   const factory = PROVIDERS[provider];
   if (!factory) {
     throw new Error(`Unknown provider: ${provider}`);
   }
-  return factory(apiKey, model, baseURL);
+  return factory(apiKey, model, baseURL, maxOutputTokens);
 }
 
 export function getApiKey(provider: string): string {
@@ -383,17 +291,12 @@ export class LLMService {
     const { code, instruction, systemPrompt } = request;
 
     logger.debug("llm", "Starting edit process");
-    logger.debug("llm", `Original instruction: ${instruction}`);
+    logger.debug("llm", `Instruction: ${instruction}`);
 
     try {
-      const enhancedInstruction = await this.provider.enhanceInstruction(
-        code,
-        instruction,
-      );
-
       const editedCode = await this.provider.applyEdit(
         code,
-        enhancedInstruction,
+        instruction,
         systemPrompt,
       );
 

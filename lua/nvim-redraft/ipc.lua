@@ -72,7 +72,9 @@ function M.send_request(params, callback)
   M.request_id = M.request_id + 1
   local id = M.request_id
 
-  M.pending_requests[id] = callback
+  M.pending_requests[id] = {
+    callback = callback,
+  }
 
   local request = vim.fn.json_encode({
     id = id,
@@ -96,8 +98,8 @@ function M.handle_response(line)
 
   logger.debug("ipc", string.format("Received response #%d", response.id))
 
-  local callback = M.pending_requests[response.id]
-  if not callback then
+  local request_data = M.pending_requests[response.id]
+  if not request_data then
     logger.warn("ipc", string.format("No callback found for response #%d", response.id))
     return
   end
@@ -106,10 +108,10 @@ function M.handle_response(line)
 
   if response.error then
     logger.error("ipc", string.format("Response #%d error: %s", response.id, response.error))
-    callback(nil, response.error)
-  else
+    request_data.callback(nil, response.error)
+  elseif response.result then
     logger.debug("ipc", string.format("Response #%d result:", response.id), response.result)
-    callback(response.result, nil)
+    request_data.callback(response.result, nil)
   end
 end
 
