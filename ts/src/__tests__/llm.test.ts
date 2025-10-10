@@ -12,7 +12,7 @@ describe("LLM Provider System", () => {
     it("should have all required provider keys", () => {
       expect(PROVIDER_API_KEYS.openai).toBe("OPENAI_API_KEY");
       expect(PROVIDER_API_KEYS.anthropic).toBe("ANTHROPIC_API_KEY");
-      expect(PROVIDER_API_KEYS.glm).toBe("GLM_API_KEY");
+      expect(PROVIDER_API_KEYS.xai).toBe("XAI_API_KEY");
     });
   });
 
@@ -20,7 +20,7 @@ describe("LLM Provider System", () => {
     it("should have default models for all providers", () => {
       expect(DEFAULT_MODELS.openai).toBe("gpt-4o-mini");
       expect(DEFAULT_MODELS.anthropic).toBe("claude-3-5-sonnet-20241022");
-      expect(DEFAULT_MODELS.glm).toBe("glm-4.5-airx");
+      expect(DEFAULT_MODELS.xai).toBe("grok-4-fast-non-reasoning");
     });
   });
 
@@ -45,9 +45,9 @@ describe("LLM Provider System", () => {
       expect(getApiKey("anthropic")).toBe("test-anthropic-key");
     });
 
-    it("should get GLM API key from environment", () => {
-      process.env.GLM_API_KEY = "test-glm-key";
-      expect(getApiKey("glm")).toBe("test-glm-key");
+    it("should get xAI API key from environment", () => {
+      process.env.XAI_API_KEY = "test-xai-key";
+      expect(getApiKey("xai")).toBe("test-xai-key");
     });
 
     it("should throw error for unknown provider", () => {
@@ -66,7 +66,7 @@ describe("LLM Provider System", () => {
     it("should return default model for known provider", () => {
       expect(getDefaultModel("openai")).toBe("gpt-4o-mini");
       expect(getDefaultModel("anthropic")).toBe("claude-3-5-sonnet-20241022");
-      expect(getDefaultModel("glm")).toBe("glm-4.5-airx");
+      expect(getDefaultModel("xai")).toBe("grok-4-fast-non-reasoning");
     });
 
     it("should return empty string for unknown provider", () => {
@@ -93,21 +93,11 @@ describe("LLM Provider System", () => {
       expect(provider.applyEdit).toBeDefined();
     });
 
-    it("should create GLM provider with default base URL", () => {
-      const provider = createProvider("glm", "test-key", "glm-4.5-airx");
+    it("should create xAI provider", () => {
+      const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
       expect(provider).toBeDefined();
       expect(provider.enhanceInstruction).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
-    });
-
-    it("should create GLM provider with custom base URL", () => {
-      const provider = createProvider(
-        "glm",
-        "test-key",
-        "glm-4.5-airx",
-        "https://custom.api.com/"
-      );
-      expect(provider).toBeDefined();
     });
 
     it("should throw error for unknown provider", () => {
@@ -166,30 +156,6 @@ describe("Provider markdown stripping", () => {
     });
   });
 
-  describe("GLM Provider", () => {
-    let provider: any;
-
-    beforeEach(() => {
-      provider = createProvider("glm", "test-key", "glm-4.5-airx");
-    });
-
-    it("should strip markdown code blocks", () => {
-      const input = "```python\nprint('hello')\n```";
-      const result = (provider as any).stripMarkdown(input);
-      expect(result).toBe("print('hello')");
-    });
-
-    it("should use custom base URL when provided", () => {
-      const customProvider = createProvider(
-        "glm",
-        "test-key",
-        "glm-4.5-airx",
-        "https://custom.api.com/"
-      );
-      expect(customProvider).toBeDefined();
-    });
-  });
-
   describe("Anthropic Provider", () => {
     let provider: any;
 
@@ -226,8 +192,8 @@ describe("Provider interfaces", () => {
     expect(typeof provider.applyEdit).toBe("function");
   });
 
-  it("should implement LLMProvider interface - GLM", () => {
-    const provider = createProvider("glm", "test-key", "glm-4.5-airx");
+  it("should implement LLMProvider interface - xAI", () => {
+    const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
     expect(typeof provider.enhanceInstruction).toBe("function");
     expect(typeof provider.applyEdit).toBe("function");
   });

@@ -1,8 +1,4 @@
-# ai-llm-integration Specification
-
-## Purpose
-TBD - created by archiving change add-inline-ai-editing. Update Purpose after archive.
-## Requirements
+## MODIFIED Requirements
 ### Requirement: MorphLLM API Integration
 The system SHALL communicate with LLM providers using the Vercel AI SDK unified interface via TypeScript service, with shared implementation logic in a base provider class to eliminate code duplication.
 
@@ -34,54 +30,6 @@ The system SHALL communicate with LLM providers using the Vercel AI SDK unified 
 - **WHEN** any provider processes a request
 - **THEN** logging, timing, error handling, and markdown stripping are handled by shared base class methods
 
-### Requirement: TypeScript Service Lifecycle
-The system SHALL manage a persistent TypeScript process for LLM communication using Vercel AI SDK.
-
-#### Scenario: Service startup on first use
-- **WHEN** first AI edit is triggered
-- **THEN** TypeScript service is spawned with Vercel AI SDK initialized and ready to accept requests
-
-#### Scenario: Service restart on crash
-- **WHEN** TypeScript service exits unexpectedly
-- **THEN** next AI edit request spawns a new service instance with Vercel AI SDK reinitialized
-
-#### Scenario: Service cleanup
-- **WHEN** Neovim exits or plugin is unloaded
-- **THEN** TypeScript service process is terminated gracefully
-
-### Requirement: JSON-RPC Communication
-The system SHALL use JSON-RPC over stdio for Lua-TypeScript IPC.
-
-#### Scenario: Request-response matching
-- **WHEN** Lua sends a request with id
-- **THEN** TypeScript response includes matching id for correlation
-
-#### Scenario: Concurrent request handling
-- **WHEN** multiple AI edits are triggered in quick succession
-- **THEN** requests are queued and processed in order with distinct ids
-
-### Requirement: Request Timeout
-The system SHALL enforce configurable timeouts for LLM requests.
-
-#### Scenario: Request completes within timeout
-- **WHEN** LLM responds before timeout (default 30s)
-- **THEN** response is processed normally
-
-#### Scenario: Request exceeds timeout
-- **WHEN** LLM does not respond within timeout
-- **THEN** request is cancelled and timeout error is shown to user
-
-### Requirement: Response Extraction
-The system SHALL extract edited code from Vercel AI SDK response for replacement.
-
-#### Scenario: Valid response content
-- **WHEN** LLM returns completion via Vercel AI SDK
-- **THEN** `result.text` is extracted as edited code
-
-#### Scenario: Malformed response
-- **WHEN** Vercel AI SDK response is missing expected fields
-- **THEN** error is returned to Lua with details for debugging
-
 ### Requirement: LLM Configuration
 The system SHALL allow users to configure LLM provider, model, and timeout using Vercel AI SDK.
 
@@ -112,4 +60,3 @@ The system SHALL allow users to configure LLM provider, model, and timeout using
 #### Scenario: Default model for xAI
 - **WHEN** user does not specify `llm.model` and provider is "xai"
 - **THEN** requests use "grok-4-fast-non-reasoning" as default model via Vercel AI SDK
-

@@ -1,10 +1,7 @@
-# ai-llm-integration Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change add-inline-ai-editing. Update Purpose after archive.
-## Requirements
 ### Requirement: MorphLLM API Integration
-The system SHALL communicate with LLM providers using the Vercel AI SDK unified interface via TypeScript service, with shared implementation logic in a base provider class to eliminate code duplication.
+The system SHALL communicate with LLM providers using the Vercel AI SDK unified interface via TypeScript service.
 
 #### Scenario: Successful API request with OpenAI
 - **WHEN** user instruction and code are sent to TypeScript service with OpenAI provider configured
@@ -18,21 +15,9 @@ The system SHALL communicate with LLM providers using the Vercel AI SDK unified 
 - **WHEN** user instruction and code are sent to TypeScript service with GLM provider configured
 - **THEN** a request is made using Vercel AI SDK's `generateText()` function with the Zhipu provider from `zhipu-ai-provider`
 
-#### Scenario: Successful API request with xAI
-- **WHEN** user instruction and code are sent to TypeScript service with xAI provider configured
-- **THEN** a request is made using Vercel AI SDK's `generateText()` function with the xAI provider from `@ai-sdk/xai`
-
 #### Scenario: API key validation
 - **WHEN** TypeScript service starts and required API key for configured provider is not set
 - **THEN** an error is logged and first request fails with clear error message
-
-#### Scenario: Base provider class eliminates duplication
-- **WHEN** a new provider is added to the system
-- **THEN** the provider implementation extends `BaseLLMProvider` and only implements provider-specific initialization logic (approximately 15-20 lines vs 150+ lines per provider)
-
-#### Scenario: Shared logging and error handling
-- **WHEN** any provider processes a request
-- **THEN** logging, timing, error handling, and markdown stripping are handled by shared base class methods
 
 ### Requirement: TypeScript Service Lifecycle
 The system SHALL manage a persistent TypeScript process for LLM communication using Vercel AI SDK.
@@ -49,28 +34,6 @@ The system SHALL manage a persistent TypeScript process for LLM communication us
 - **WHEN** Neovim exits or plugin is unloaded
 - **THEN** TypeScript service process is terminated gracefully
 
-### Requirement: JSON-RPC Communication
-The system SHALL use JSON-RPC over stdio for Lua-TypeScript IPC.
-
-#### Scenario: Request-response matching
-- **WHEN** Lua sends a request with id
-- **THEN** TypeScript response includes matching id for correlation
-
-#### Scenario: Concurrent request handling
-- **WHEN** multiple AI edits are triggered in quick succession
-- **THEN** requests are queued and processed in order with distinct ids
-
-### Requirement: Request Timeout
-The system SHALL enforce configurable timeouts for LLM requests.
-
-#### Scenario: Request completes within timeout
-- **WHEN** LLM responds before timeout (default 30s)
-- **THEN** response is processed normally
-
-#### Scenario: Request exceeds timeout
-- **WHEN** LLM does not respond within timeout
-- **THEN** request is cancelled and timeout error is shown to user
-
 ### Requirement: Response Extraction
 The system SHALL extract edited code from Vercel AI SDK response for replacement.
 
@@ -86,7 +49,7 @@ The system SHALL extract edited code from Vercel AI SDK response for replacement
 The system SHALL allow users to configure LLM provider, model, and timeout using Vercel AI SDK.
 
 #### Scenario: Provider selection
-- **WHEN** user sets `llm.provider` to "openai", "anthropic", or "xai" in configuration
+- **WHEN** user sets `llm.provider` to "openai" or "anthropic" in configuration
 - **THEN** the system uses the specified provider from Vercel AI SDK for all LLM requests
 
 #### Scenario: Custom model name
@@ -109,7 +72,9 @@ The system SHALL allow users to configure LLM provider, model, and timeout using
 - **WHEN** user does not specify `llm.model` and provider is "glm"
 - **THEN** requests use "glm-4.5-airx" as default model via Vercel AI SDK
 
-#### Scenario: Default model for xAI
-- **WHEN** user does not specify `llm.model` and provider is "xai"
-- **THEN** requests use "grok-4-fast-non-reasoning" as default model via Vercel AI SDK
+## REMOVED Requirements
 
+### Requirement: Prompt Format
+**Reason**: Vercel AI SDK uses standard messages array format instead of custom tagged format
+
+**Migration**: The system now uses standard message objects with `role` and `content` fields as defined by Vercel AI SDK, eliminating the need for `<instruction>`, `<code>`, and `<update>` tags

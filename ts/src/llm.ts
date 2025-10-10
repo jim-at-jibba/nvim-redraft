@@ -1,5 +1,7 @@
-import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
+import { generateText, LanguageModel } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createXai } from "@ai-sdk/xai";
 import { logger } from "./logger";
 
 export interface EditRequest {
@@ -26,13 +28,29 @@ export interface LLMProvider {
   ): Promise<string>;
 }
 
-class OpenAIProvider implements LLMProvider {
-  private client: OpenAI;
-  private model: string;
+abstract class BaseLLMProvider implements LLMProvider {
+  protected model: string;
+  protected apiKey: string;
 
   constructor(apiKey: string, model: string) {
-    this.client = new OpenAI({ apiKey });
+    this.apiKey = apiKey;
     this.model = model;
+  }
+
+  protected abstract createProviderInstance(): any;
+
+  protected getGenerateTextOptions(
+    method: "enhance" | "apply",
+    systemPrompt?: string,
+  ): Record<string, any> {
+    return {};
+  }
+
+  protected stripMarkdown(text: string): string {
+    const trimmed = text.trim();
+    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
+    const match = trimmed.match(codeBlockRegex);
+    return match ? match[1] : trimmed;
   }
 
   async enhanceInstruction(code: string, instruction: string): Promise<string> {
@@ -44,8 +62,13 @@ class OpenAIProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
+    const provider = this.createProviderInstance();
+
+    const options = this.getGenerateTextOptions("enhance");
+
+    const result = await generateText({
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "system",
@@ -61,8 +84,7 @@ class OpenAIProvider implements LLMProvider {
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
+    if (!result.text) {
       logger.error(
         "enhance-instruction",
         "No response from instruction enhancement",
@@ -70,15 +92,15 @@ class OpenAIProvider implements LLMProvider {
       throw new Error("No response from instruction enhancement");
     }
 
-    const enhanced = result.trim();
+    const enhanced = result.text.trim();
 
     logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
     logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "enhance-instruction",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -96,14 +118,20 @@ class OpenAIProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.chat.completions.create({
-      model: this.model,
+    const provider = this.createProviderInstance();
+
+    const defaultSystemPrompt =
+      "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
+
+    const options = this.getGenerateTextOptions("apply", systemPrompt);
+
+    const result = await generateText({
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "system",
-          content:
-            systemPrompt ||
-            "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.",
+          content: systemPrompt || defaultSystemPrompt,
         },
         {
           role: "user",
@@ -114,13 +142,12 @@ class OpenAIProvider implements LLMProvider {
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
+    if (!result.text) {
       logger.error("apply-edit", "No response from edit");
       throw new Error("No response from edit");
     }
 
-    const stripped = this.stripMarkdown(result);
+    const stripped = this.stripMarkdown(result.text);
 
     logger.debug("apply-edit", "Edited code:", stripped);
     logger.info(
@@ -128,154 +155,43 @@ class OpenAIProvider implements LLMProvider {
       `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
     );
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "apply-edit",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
     return stripped;
   }
+}
 
-  private stripMarkdown(text: string): string {
-    const trimmed = text.trim();
-    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
-    const match = trimmed.match(codeBlockRegex);
-    return match ? match[1] : trimmed;
+class OpenAIProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createOpenAI({ apiKey: this.apiKey });
   }
 }
 
-class GLMProvider implements LLMProvider {
-  private client: OpenAI;
-  private model: string;
-
-  constructor(apiKey: string, model: string, baseURL?: string) {
-    this.client = new OpenAI({
-      apiKey,
-      baseURL: baseURL || "https://api.z.ai/api/paas/v4/",
-    });
-    this.model = model;
+class AnthropicProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createAnthropic({ apiKey: this.apiKey });
   }
 
-  async enhanceInstruction(code: string, instruction: string): Promise<string> {
-    logger.debug(
-      "enhance-instruction",
-      `Enhancing instruction with ${this.model}`,
-    );
-    logger.debug("enhance-instruction", `Original: ${instruction}`);
-
-    const startTime = Date.now();
-
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a code editing assistant. Expand the user's brief instruction into a single, concise sentence in first person describing what changes to make. Be specific and direct. Example: 'I'm adding search functionality and keyboard navigation to the DataTable component.'",
-        },
-        {
-          role: "user",
-          content: `Instruction: ${instruction}\n\nCode:\n${code}\n\nExpand into one specific sentence:`,
-        },
-      ],
-    });
-
-    const elapsed = Date.now() - startTime;
-
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
-      logger.error(
-        "enhance-instruction",
-        "No response from instruction enhancement",
-      );
-      throw new Error("No response from instruction enhancement");
-    }
-
-    const enhanced = result.trim();
-
-    logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
-    logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
-
-    if (response.usage) {
-      logger.debug(
-        "enhance-instruction",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
-      );
-    }
-
-    return enhanced;
-  }
-
-  async applyEdit(
-    code: string,
-    instruction: string,
+  protected getGenerateTextOptions(
+    method: "enhance" | "apply",
     systemPrompt?: string,
-  ): Promise<string> {
-    logger.debug("apply-edit", `Calling ${this.model} for edit`);
-    logger.debug("apply-edit", "Input code:", code);
-    logger.debug("apply-edit", "Instruction:", instruction);
+  ): Record<string, any> {
+    const options: Record<string, any> = {
+      maxOutputTokens: method === "enhance" ? 1024 : 4096,
+    };
 
-    const startTime = Date.now();
-
-    const response = await this.client.chat.completions.create({
-      model: this.model,
-      messages: [
-        {
-          role: "system",
-          content:
-            systemPrompt ||
-            "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.",
-        },
-        {
-          role: "user",
-          content: `${instruction}\n\n${code}`,
-        },
-      ],
-    });
-
-    const elapsed = Date.now() - startTime;
-
-    const result = response.choices[0]?.message?.content;
-    if (!result) {
-      logger.error("apply-edit", "No response from edit");
-      throw new Error("No response from edit");
+    if (method === "apply") {
+      const defaultSystemPrompt =
+        "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
+      options.system = systemPrompt || defaultSystemPrompt;
     }
 
-    const stripped = this.stripMarkdown(result);
-
-    logger.debug("apply-edit", "Edited code:", stripped);
-    logger.info(
-      "apply-edit",
-      `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
-    );
-
-    if (response.usage) {
-      logger.debug(
-        "apply-edit",
-        `Token usage - prompt: ${response.usage.prompt_tokens}, completion: ${response.usage.completion_tokens}, total: ${response.usage.total_tokens}`,
-      );
-    }
-
-    return stripped;
-  }
-
-  private stripMarkdown(text: string): string {
-    const trimmed = text.trim();
-    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
-    const match = trimmed.match(codeBlockRegex);
-    return match ? match[1] : trimmed;
-  }
-}
-
-class AnthropicProvider implements LLMProvider {
-  private client: Anthropic;
-  private model: string;
-
-  constructor(apiKey: string, model: string) {
-    this.client = new Anthropic({ apiKey });
-    this.model = model;
+    return options;
   }
 
   async enhanceInstruction(code: string, instruction: string): Promise<string> {
@@ -287,9 +203,13 @@ class AnthropicProvider implements LLMProvider {
 
     const startTime = Date.now();
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 1024,
+    const provider = this.createProviderInstance();
+
+    const options = this.getGenerateTextOptions("enhance");
+
+    const result = await generateText({
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "user",
@@ -307,8 +227,7 @@ Expand into one specific sentence:`,
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.content[0];
-    if (!result || result.type !== "text") {
+    if (!result.text) {
       logger.error(
         "enhance-instruction",
         "No response from instruction enhancement",
@@ -321,10 +240,10 @@ Expand into one specific sentence:`,
     logger.debug("enhance-instruction", `Enhanced: ${enhanced}`);
     logger.info("enhance-instruction", `Instruction enhanced in ${elapsed}ms`);
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "enhance-instruction",
-        `Token usage - input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
@@ -342,14 +261,13 @@ Expand into one specific sentence:`,
 
     const startTime = Date.now();
 
-    const systemMessage =
-      systemPrompt ||
-      "You are a code editing assistant. Apply the requested changes and return ONLY the modified code. Do not include explanations, markdown formatting, or any text before or after the code.";
+    const provider = this.createProviderInstance();
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 4096,
-      system: systemMessage,
+    const options = this.getGenerateTextOptions("apply", systemPrompt);
+
+    const result = await generateText({
+      model: provider(this.model),
+      ...options,
       messages: [
         {
           role: "user",
@@ -360,8 +278,7 @@ Expand into one specific sentence:`,
 
     const elapsed = Date.now() - startTime;
 
-    const result = response.content[0];
-    if (!result || result.type !== "text") {
+    if (!result.text) {
       logger.error("apply-edit", "No response from edit");
       throw new Error("No response from edit");
     }
@@ -374,21 +291,20 @@ Expand into one specific sentence:`,
       `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
     );
 
-    if (response.usage) {
+    if (result.usage) {
       logger.debug(
         "apply-edit",
-        `Token usage - input: ${response.usage.input_tokens}, output: ${response.usage.output_tokens}`,
+        `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
 
     return stripped;
   }
+}
 
-  private stripMarkdown(text: string): string {
-    const trimmed = text.trim();
-    const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)\n```/;
-    const match = trimmed.match(codeBlockRegex);
-    return match ? match[1] : trimmed;
+class XaiProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createXai({ apiKey: this.apiKey });
   }
 }
 
@@ -402,7 +318,7 @@ const PROVIDERS: Record<
 > = {
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
-  glm: (apiKey, model, baseURL) => new GLMProvider(apiKey, model, baseURL),
+  xai: (apiKey, model) => new XaiProvider(apiKey, model),
 };
 
 /**
@@ -412,7 +328,7 @@ const PROVIDERS: Record<
 export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
-  glm: "GLM_API_KEY",
+  xai: "XAI_API_KEY",
 };
 
 /**
@@ -422,7 +338,7 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
 export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-20241022",
-  glm: "glm-4.5-airx",
+  xai: "grok-4-fast-non-reasoning",
 };
 
 export function createProvider(
