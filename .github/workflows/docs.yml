@@ -15,8 +15,8 @@ jobs:
       - name: panvimdoc
         uses: kdheepak/panvimdoc@main
         with:
-          vimdoc: my-template-docs
-          version: "Neovim >= 0.8.0"
+          vimdoc: nvim-redraft
+          version: "Neovim >= 11.0.0"
           demojify: true
           treesitter: true
       - name: Push changes
