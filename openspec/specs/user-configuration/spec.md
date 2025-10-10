@@ -37,10 +37,10 @@ The system SHALL allow users to customize AI edit keybindings.
 - **THEN** no default keybinding is registered
 
 ### Requirement: LLM Configuration
-The system SHALL allow users to configure LLM provider, model, and timeout.
+The system SHALL allow users to configure LLM provider, model, base URL, and timeout.
 
 #### Scenario: Provider selection
-- **WHEN** user sets `llm.provider` to "openai" or "anthropic"
+- **WHEN** user sets `llm.provider` to "openai", "anthropic", "xai", or "ollama"
 - **THEN** the system uses the specified provider for all LLM requests
 
 #### Scenario: Custom model name
@@ -51,12 +51,16 @@ The system SHALL allow users to configure LLM provider, model, and timeout.
 - **WHEN** user sets `llm.timeout` in configuration
 - **THEN** requests timeout after specified milliseconds
 
+#### Scenario: Custom base URL
+- **WHEN** user sets `llm.base_url` in configuration (for providers like Ollama)
+- **THEN** requests are sent to the configured base URL
+
 #### Scenario: Default provider
 - **WHEN** user does not specify `llm.provider`
 - **THEN** system defaults to "openai" provider
 
 #### Scenario: Invalid provider value
-- **WHEN** user sets `llm.provider` to value other than "openai" or "anthropic"
+- **WHEN** user sets `llm.provider` to value other than "openai", "anthropic", "xai", or "ollama"
 - **THEN** setup() fails with clear validation error
 
 ### Requirement: Configuration Validation
@@ -80,6 +84,14 @@ The system SHALL document and validate required environment variables based on s
 #### Scenario: Anthropic API key required
 - **WHEN** provider is "anthropic" and first API request is made without `ANTHROPIC_API_KEY` set
 - **THEN** clear error message directs user to set the ANTHROPIC_API_KEY environment variable
+
+#### Scenario: xAI API key required
+- **WHEN** provider is "xai" and first API request is made without `XAI_API_KEY` set
+- **THEN** clear error message directs user to set the XAI_API_KEY environment variable
+
+#### Scenario: Ollama no API key required
+- **WHEN** provider is "ollama" and no `OLLAMA_API_KEY` is set
+- **THEN** requests proceed without API key validation (local Ollama servers don't require authentication by default)
 
 #### Scenario: API key present for selected provider
 - **WHEN** appropriate API key is set for selected provider
