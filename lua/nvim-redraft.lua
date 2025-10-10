@@ -28,7 +28,7 @@ Be intelligent about preserving code structure, indentation, and style.]],
   },
   llm = {
     provider = "openai",
-    model = "gpt-4o-mini",
+    model = nil,
     timeout = 30000,
     base_url = nil,
   },
