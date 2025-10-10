@@ -2,6 +2,7 @@ import { generateText, LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createXai } from "@ai-sdk/xai";
+import { createOllama } from "ollama-ai-provider-v2";
 import { logger } from "./logger";
 
 export interface EditRequest {
@@ -31,10 +32,12 @@ export interface LLMProvider {
 abstract class BaseLLMProvider implements LLMProvider {
   protected model: string;
   protected apiKey: string;
+  protected baseURL?: string;
 
-  constructor(apiKey: string, model: string) {
+  constructor(apiKey: string, model: string, baseURL?: string) {
     this.apiKey = apiKey;
     this.model = model;
+    this.baseURL = baseURL;
   }
 
   protected abstract createProviderInstance(): any;
@@ -308,6 +311,14 @@ class XaiProvider extends BaseLLMProvider {
   }
 }
 
+class OllamaProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createOllama({
+      baseURL: this.baseURL || "http://localhost:11434/api",
+    });
+  }
+}
+
 /**
  * Provider registry maps provider names to factory functions.
  * To add a new provider, add one line here after implementing the LLMProvider interface.
@@ -319,6 +330,7 @@ const PROVIDERS: Record<
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
   xai: (apiKey, model) => new XaiProvider(apiKey, model),
+  ollama: (apiKey, model, baseURL) => new OllamaProvider(apiKey, model, baseURL),
 };
 
 /**
@@ -329,6 +341,7 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
   xai: "XAI_API_KEY",
+  ollama: "OLLAMA_API_KEY",
 };
 
 /**
@@ -339,6 +352,7 @@ export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-20241022",
   xai: "grok-4-fast-non-reasoning",
+  ollama: "llama3.2",
 };
 
 export function createProvider(
@@ -360,12 +374,12 @@ export function getApiKey(provider: string): string {
     throw new Error(`Unknown provider: ${provider}`);
   }
   const apiKey = process.env[envVar];
-  if (!apiKey) {
+  if (!apiKey && provider !== "ollama") {
     throw new Error(
       `${envVar} environment variable is required for provider '${provider}'`,
     );
   }
-  return apiKey;
+  return apiKey || "";
 }
 
 export function getDefaultModel(provider: string): string {

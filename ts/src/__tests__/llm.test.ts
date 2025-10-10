@@ -13,6 +13,7 @@ describe("LLM Provider System", () => {
       expect(PROVIDER_API_KEYS.openai).toBe("OPENAI_API_KEY");
       expect(PROVIDER_API_KEYS.anthropic).toBe("ANTHROPIC_API_KEY");
       expect(PROVIDER_API_KEYS.xai).toBe("XAI_API_KEY");
+      expect(PROVIDER_API_KEYS.ollama).toBe("OLLAMA_API_KEY");
     });
   });
 
@@ -21,6 +22,7 @@ describe("LLM Provider System", () => {
       expect(DEFAULT_MODELS.openai).toBe("gpt-4o-mini");
       expect(DEFAULT_MODELS.anthropic).toBe("claude-3-5-sonnet-20241022");
       expect(DEFAULT_MODELS.xai).toBe("grok-4-fast-non-reasoning");
+      expect(DEFAULT_MODELS.ollama).toBe("llama3.2");
     });
   });
 
@@ -50,6 +52,11 @@ describe("LLM Provider System", () => {
       expect(getApiKey("xai")).toBe("test-xai-key");
     });
 
+    it("should allow ollama without API key", () => {
+      delete process.env.OLLAMA_API_KEY;
+      expect(getApiKey("ollama")).toBe("");
+    });
+
     it("should throw error for unknown provider", () => {
       expect(() => getApiKey("unknown")).toThrow("Unknown provider: unknown");
     });
@@ -67,6 +74,7 @@ describe("LLM Provider System", () => {
       expect(getDefaultModel("openai")).toBe("gpt-4o-mini");
       expect(getDefaultModel("anthropic")).toBe("claude-3-5-sonnet-20241022");
       expect(getDefaultModel("xai")).toBe("grok-4-fast-non-reasoning");
+      expect(getDefaultModel("ollama")).toBe("llama3.2");
     });
 
     it("should return empty string for unknown provider", () => {
@@ -95,6 +103,20 @@ describe("LLM Provider System", () => {
 
     it("should create xAI provider", () => {
       const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
+      expect(provider).toBeDefined();
+      expect(provider.enhanceInstruction).toBeDefined();
+      expect(provider.applyEdit).toBeDefined();
+    });
+
+    it("should create Ollama provider", () => {
+      const provider = createProvider("ollama", "", "llama3.2");
+      expect(provider).toBeDefined();
+      expect(provider.enhanceInstruction).toBeDefined();
+      expect(provider.applyEdit).toBeDefined();
+    });
+
+    it("should create Ollama provider with custom baseURL", () => {
+      const provider = createProvider("ollama", "", "llama3.2", "http://custom:11434/api");
       expect(provider).toBeDefined();
       expect(provider.enhanceInstruction).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
@@ -194,6 +216,12 @@ describe("Provider interfaces", () => {
 
   it("should implement LLMProvider interface - xAI", () => {
     const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
+    expect(typeof provider.enhanceInstruction).toBe("function");
+    expect(typeof provider.applyEdit).toBe("function");
+  });
+
+  it("should implement LLMProvider interface - Ollama", () => {
+    const provider = createProvider("ollama", "", "llama3.2");
     expect(typeof provider.enhanceInstruction).toBe("function");
     expect(typeof provider.applyEdit).toBe("function");
   });

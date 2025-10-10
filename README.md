@@ -1,6 +1,6 @@
 # nvim-redraft
 
-A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic, xAI).
+A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic, xAI, Ollama).
 
 https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
 
@@ -19,10 +19,11 @@ https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
 - Neovim >= 0.8.0
 - Node.js >= 18.0.0
 - [Snacks.nvim](https://github.com/folke/snacks.nvim) with input support
-- API key for at least one supported provider:
+- API key for at least one supported provider (or Ollama running locally):
   - OpenAI API key ([get one here](https://platform.openai.com/api-keys))
   - Anthropic API key ([get one here](https://console.anthropic.com/))
   - xAI API key ([get one here](https://console.x.ai/))
+  - Ollama ([install here](https://ollama.com/))
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
@@ -68,7 +69,7 @@ use {
 
 ## Setup
 
-1. Set your API key(s):
+1. Set your API key(s) or install Ollama:
 
 ```bash
 # For OpenAI (default provider)
@@ -79,6 +80,10 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
 
 # For xAI
 export XAI_API_KEY="your-xai-api-key-here"
+
+# For Ollama - no API key needed, just install and run
+# Install from https://ollama.com/
+ollama pull llama3.2  # or any other model
 ```
 
 
@@ -91,9 +96,10 @@ require("nvim-redraft").setup({
     visual_edit = "<leader>ae",
   },
   llm = {
-    provider = "openai",       -- "openai", "anthropic", or "xai"
+    provider = "openai",       -- "openai", "anthropic", "xai", or "ollama"
     model = "gpt-4o-mini",     -- Model name (optional, uses provider default if omitted)
     timeout = 30000,
+    base_url = nil,            -- Custom base URL (for Ollama, defaults to http://localhost:11434/api)
   },
 })
 ```
@@ -142,9 +148,10 @@ function add(a, b) {
     visual_edit = string,      -- Keybinding for visual mode edit (default: "<leader>ae")
   },
   llm = {
-    provider = string,         -- LLM provider: "openai", "anthropic", or "xai" (default: "openai")
-    model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, grok-4-fast-non-reasoning for xAI)
+    provider = string,         -- LLM provider: "openai", "anthropic", "xai", or "ollama" (default: "openai")
+    model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, grok-4-fast-non-reasoning for xAI, llama3.2 for Ollama)
     timeout = number,          -- Request timeout in milliseconds (default: 30000)
+    base_url = string,         -- Custom base URL (optional, for Ollama defaults to http://localhost:11434/api)
   },
   input = {
     prompt = string,           -- Input prompt text (default: "AI Edit: ")
@@ -206,6 +213,25 @@ Set environment variable:
 export XAI_API_KEY="your-xai-api-key"
 ```
 
+#### Ollama
+```lua
+require("nvim-redraft").setup({
+  llm = {
+    provider = "ollama",
+    model = "llama3.2",  -- Or "phi3", "codellama", etc.
+    base_url = "http://localhost:11434/api",  -- Optional, this is the default
+  },
+})
+```
+
+No API key required. Make sure Ollama is running:
+```bash
+ollama serve  # Start Ollama server
+ollama pull llama3.2  # Download a model
+```
+
+You can use any model available in [Ollama's library](https://ollama.com/library).
+
 ### Debug Logging
 
 Enable detailed logging to troubleshoot issues:
@@ -262,8 +288,9 @@ end)
 - `OPENAI_API_KEY` - Your OpenAI API key (required if using OpenAI provider)
 - `ANTHROPIC_API_KEY` - Your Anthropic API key (required if using Anthropic provider)
 - `XAI_API_KEY` - Your xAI API key (required if using xAI provider)
+- `OLLAMA_API_KEY` - Optional API key for Ollama (not required for local installations)
 
-You only need to set the API key for the provider you're using.
+You only need to set the API key for the provider you're using. Ollama does not require an API key when running locally.
 
 ## Troubleshooting
 
@@ -295,6 +322,39 @@ export XAI_API_KEY="your-xai-api-key"
 ```
 
 Add them to your `.bashrc`, `.zshrc`, or `.profile` to persist across sessions.
+
+Note: Ollama does not require an API key for local installations.
+
+### Ollama connection issues
+
+Make sure Ollama is running:
+
+```bash
+ollama serve
+```
+
+Verify the model is available:
+
+```bash
+ollama list
+```
+
+If the model isn't available, pull it:
+
+```bash
+ollama pull llama3.2  # or your desired model
+```
+
+If using a custom Ollama installation, set the base URL:
+
+```lua
+require("nvim-redraft").setup({
+  llm = {
+    provider = "ollama",
+    base_url = "http://your-ollama-server:11434/api",
+  },
+})
+```
 
 ### TypeScript service fails to start
 
