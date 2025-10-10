@@ -1,6 +1,7 @@
 import { generateText, LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createXai } from "@ai-sdk/xai";
 import { logger } from "./logger";
 
 export interface EditRequest {
@@ -301,6 +302,12 @@ Expand into one specific sentence:`,
   }
 }
 
+class XaiProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createXai({ apiKey: this.apiKey });
+  }
+}
+
 /**
  * Provider registry maps provider names to factory functions.
  * To add a new provider, add one line here after implementing the LLMProvider interface.
@@ -311,6 +318,7 @@ const PROVIDERS: Record<
 > = {
   openai: (apiKey, model) => new OpenAIProvider(apiKey, model),
   anthropic: (apiKey, model) => new AnthropicProvider(apiKey, model),
+  xai: (apiKey, model) => new XaiProvider(apiKey, model),
 };
 
 /**
@@ -320,6 +328,7 @@ const PROVIDERS: Record<
 export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
+  xai: "XAI_API_KEY",
 };
 
 /**
@@ -329,6 +338,7 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
 export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-20241022",
+  xai: "grok-4-fast-non-reasoning",
 };
 
 export function createProvider(

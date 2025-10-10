@@ -68,7 +68,12 @@ class JSONRPCServer {
 
       const apiKey = getApiKey(providerName);
       if (!apiKey) {
-        const keyName = providerName === "openai" ? "OPENAI_API_KEY" : "ANTHROPIC_API_KEY";
+        const keyName =
+          providerName === "openai"
+            ? "OPENAI_API_KEY"
+            : providerName === "anthropic"
+              ? "ANTHROPIC_API_KEY"
+              : "XAI_API_KEY";
         const error = `${keyName} environment variable is not set. Please set it and restart Neovim.`;
         logger.error("server", `Request #${request.id} failed: ${error}`);
         this.sendResponse({

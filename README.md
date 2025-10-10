@@ -1,6 +1,6 @@
 # nvim-redraft
 
-A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic).
+A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic, xAI).
 
 https://github.com/user-attachments/assets/0e14cf0e-6c63-457f-af40-7c30b64e83b6
 
@@ -22,6 +22,7 @@ https://github.com/user-attachments/assets/0e14cf0e-6c63-457f-af40-7c30b64e83b6
 - API key for at least one supported provider:
   - OpenAI API key ([get one here](https://platform.openai.com/api-keys))
   - Anthropic API key ([get one here](https://console.anthropic.com/))
+  - xAI API key ([get one here](https://console.x.ai/))
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
@@ -74,6 +75,9 @@ export OPENAI_API_KEY="your-openai-api-key-here"
 
 # For Anthropic
 export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
+
+# For xAI
+export XAI_API_KEY="your-xai-api-key-here"
 ```
 
 2. Install TypeScript dependencies:
@@ -93,7 +97,7 @@ require("nvim-redraft").setup({
     visual_edit = "<leader>ae",
   },
   llm = {
-    provider = "openai",       -- "openai" or "anthropic"
+    provider = "openai",       -- "openai", "anthropic", or "xai"
     model = "gpt-4o-mini",     -- Model name (optional, uses provider default if omitted)
     timeout = 30000,
   },
@@ -144,8 +148,8 @@ function add(a, b) {
     visual_edit = string,      -- Keybinding for visual mode edit (default: "<leader>ae")
   },
   llm = {
-    provider = string,         -- LLM provider: "openai" or "anthropic" (default: "openai")
-    model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic)
+    provider = string,         -- LLM provider: "openai", "anthropic", or "xai" (default: "openai")
+    model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, grok-4-fast-non-reasoning for xAI)
     timeout = number,          -- Request timeout in milliseconds (default: 30000)
   },
   input = {
@@ -191,6 +195,21 @@ require("nvim-redraft").setup({
 Set environment variable:
 ```bash
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
+```
+
+#### xAI
+```lua
+require("nvim-redraft").setup({
+  llm = {
+    provider = "xai",
+    model = "grok-4-fast-non-reasoning",  -- Or other Grok models
+  },
+})
+```
+
+Set environment variable:
+```bash
+export XAI_API_KEY="your-xai-api-key"
 ```
 
 ### Debug Logging
@@ -248,6 +267,7 @@ end)
 
 - `OPENAI_API_KEY` - Your OpenAI API key (required if using OpenAI provider)
 - `ANTHROPIC_API_KEY` - Your Anthropic API key (required if using Anthropic provider)
+- `XAI_API_KEY` - Your xAI API key (required if using xAI provider)
 
 You only need to set the API key for the provider you're using.
 
@@ -265,7 +285,7 @@ require("nvim-redraft").setup({
 
 Then check the log file at `~/.local/state/nvim/nvim-redraft.log` for detailed information about what's happening.
 
-### "OPENAI_API_KEY not set" or "ANTHROPIC_API_KEY not set" error
+### "OPENAI_API_KEY not set", "ANTHROPIC_API_KEY not set", or "XAI_API_KEY not set" error
 
 Make sure you've exported the API key for your chosen provider:
 
@@ -275,6 +295,9 @@ export OPENAI_API_KEY="your-openai-api-key"
 
 # For Anthropic
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
+
+# For xAI
+export XAI_API_KEY="your-xai-api-key"
 ```
 
 Add them to your `.bashrc`, `.zshrc`, or `.profile` to persist across sessions.

@@ -12,6 +12,7 @@ describe("LLM Provider System", () => {
     it("should have all required provider keys", () => {
       expect(PROVIDER_API_KEYS.openai).toBe("OPENAI_API_KEY");
       expect(PROVIDER_API_KEYS.anthropic).toBe("ANTHROPIC_API_KEY");
+      expect(PROVIDER_API_KEYS.xai).toBe("XAI_API_KEY");
     });
   });
 
@@ -19,6 +20,7 @@ describe("LLM Provider System", () => {
     it("should have default models for all providers", () => {
       expect(DEFAULT_MODELS.openai).toBe("gpt-4o-mini");
       expect(DEFAULT_MODELS.anthropic).toBe("claude-3-5-sonnet-20241022");
+      expect(DEFAULT_MODELS.xai).toBe("grok-4-fast-non-reasoning");
     });
   });
 
@@ -43,6 +45,11 @@ describe("LLM Provider System", () => {
       expect(getApiKey("anthropic")).toBe("test-anthropic-key");
     });
 
+    it("should get xAI API key from environment", () => {
+      process.env.XAI_API_KEY = "test-xai-key";
+      expect(getApiKey("xai")).toBe("test-xai-key");
+    });
+
     it("should throw error for unknown provider", () => {
       expect(() => getApiKey("unknown")).toThrow("Unknown provider: unknown");
     });
@@ -59,6 +66,7 @@ describe("LLM Provider System", () => {
     it("should return default model for known provider", () => {
       expect(getDefaultModel("openai")).toBe("gpt-4o-mini");
       expect(getDefaultModel("anthropic")).toBe("claude-3-5-sonnet-20241022");
+      expect(getDefaultModel("xai")).toBe("grok-4-fast-non-reasoning");
     });
 
     it("should return empty string for unknown provider", () => {
@@ -80,6 +88,13 @@ describe("LLM Provider System", () => {
         "test-key",
         "claude-3-5-sonnet-20241022"
       );
+      expect(provider).toBeDefined();
+      expect(provider.enhanceInstruction).toBeDefined();
+      expect(provider.applyEdit).toBeDefined();
+    });
+
+    it("should create xAI provider", () => {
+      const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
       expect(provider).toBeDefined();
       expect(provider.enhanceInstruction).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
@@ -173,6 +188,12 @@ describe("Provider interfaces", () => {
       "test-key",
       "claude-3-5-sonnet-20241022"
     );
+    expect(typeof provider.enhanceInstruction).toBe("function");
+    expect(typeof provider.applyEdit).toBe("function");
+  });
+
+  it("should implement LLMProvider interface - xAI", () => {
+    const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
     expect(typeof provider.enhanceInstruction).toBe("function");
     expect(typeof provider.applyEdit).toBe("function");
   });
