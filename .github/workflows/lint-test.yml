@@ -30,5 +30,13 @@ jobs:
           neovim: true
           version: ${{ matrix.nvim-versions }}
 
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: install and build typescript
+        run: cd ts && npm install && npm run build
+
       - name: run tests
         run: make test
