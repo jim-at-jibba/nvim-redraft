@@ -106,14 +106,6 @@ SETUP                                    *my-template-docs-nvim-redraft-setup*
     export XAI_API_KEY="your-xai-api-key-here"
 <
 
-1. Install TypeScript dependencies:
-
->bash
-    cd ts
-    npm install
-    npm run build
-<
-
 1. Configure the plugin in your Neovim config:
 
 >lua
