@@ -32,6 +32,7 @@ https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
   dependencies = {
     { "folke/snacks.nvim", opts = { input = {} } },
   },
+  event = "VeryLazy",
   config = function()
     require("nvim-redraft").setup({
       -- Optional configuration
