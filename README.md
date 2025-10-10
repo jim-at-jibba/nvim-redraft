@@ -80,15 +80,8 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
 export XAI_API_KEY="your-xai-api-key-here"
 ```
 
-2. Install TypeScript dependencies:
 
-```bash
-cd ts
-npm install
-npm run build
-```
-
-3. Configure the plugin in your Neovim config:
+2. Configure the plugin in your Neovim config:
 
 ```lua
 require("nvim-redraft").setup({
