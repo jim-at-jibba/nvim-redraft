@@ -18,6 +18,10 @@ The system SHALL communicate with LLM providers using the Vercel AI SDK unified 
 - **WHEN** user instruction and code are sent to TypeScript service with GLM provider configured
 - **THEN** a request is made using Vercel AI SDK's `generateText()` function with the Zhipu provider from `zhipu-ai-provider`
 
+#### Scenario: Successful API request with xAI
+- **WHEN** user instruction and code are sent to TypeScript service with xAI provider configured
+- **THEN** a request is made using Vercel AI SDK's `generateText()` function with the xAI provider from `@ai-sdk/xai`
+
 #### Scenario: API key validation
 - **WHEN** TypeScript service starts and required API key for configured provider is not set
 - **THEN** an error is logged and first request fails with clear error message
@@ -82,7 +86,7 @@ The system SHALL extract edited code from Vercel AI SDK response for replacement
 The system SHALL allow users to configure LLM provider, model, and timeout using Vercel AI SDK.
 
 #### Scenario: Provider selection
-- **WHEN** user sets `llm.provider` to "openai" or "anthropic" in configuration
+- **WHEN** user sets `llm.provider` to "openai", "anthropic", or "xai" in configuration
 - **THEN** the system uses the specified provider from Vercel AI SDK for all LLM requests
 
 #### Scenario: Custom model name
@@ -104,4 +108,8 @@ The system SHALL allow users to configure LLM provider, model, and timeout using
 #### Scenario: Default model for GLM
 - **WHEN** user does not specify `llm.model` and provider is "glm"
 - **THEN** requests use "glm-4.5-airx" as default model via Vercel AI SDK
+
+#### Scenario: Default model for xAI
+- **WHEN** user does not specify `llm.model` and provider is "xai"
+- **THEN** requests use "grok-4-fast-non-reasoning" as default model via Vercel AI SDK
 
