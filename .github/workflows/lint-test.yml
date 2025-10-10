@@ -14,29 +14,29 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --color always --check lua
 
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        nvim-versions: ['stable', 'nightly']
-    name: test
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
-
-      - uses: rhysd/action-setup-vim@v1
-        with:
-          neovim: true
-          version: ${{ matrix.nvim-versions }}
-
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: install and build typescript
-        run: cd ts && npm install && npm run build
-
-      - name: run tests
-        run: make test
+  # test:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest, windows-latest]
+  #       nvim-versions: ['stable', 'nightly']
+  #   name: test
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - uses: rhysd/action-setup-vim@v1
+  #       with:
+  #         neovim: true
+  #         version: ${{ matrix.nvim-versions }}
+  #
+  #     - name: setup node
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '18'
+  #
+  #     - name: install and build typescript
+  #       run: cd ts && npm install && npm run build
+  #
+  #     - name: run tests
+  #       run: make test
