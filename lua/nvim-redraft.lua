@@ -24,9 +24,9 @@ Generate a sparse edit showing only the changes needed:
 - Return ONLY the modified code, no explanations or markdown formatting
 
 Be intelligent about preserving code structure, indentation, and style.]],
-  keybindings = {
-    visual_edit = "<leader>ae",
-    select_model = "<leader>am",
+  keys = {
+    { "<leader>ae", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
+    { "<leader>am", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
   },
   llm = {
     provider = "openai",
@@ -128,16 +128,12 @@ function M.setup(opts)
   logger.init(M.config)
   ipc.config = M.config
 
-  if M.config.keybindings.visual_edit then
-    vim.keymap.set("v", M.config.keybindings.visual_edit, function()
-      M.edit()
-    end, { desc = "AI Edit Selection" })
-  end
-
-  if M.config.keybindings.select_model then
-    vim.keymap.set("n", M.config.keybindings.select_model, function()
-      M.select_model()
-    end, { desc = "Select AI Model" })
+  if M.config.keys then
+    for _, key in ipairs(M.config.keys) do
+      local mode = key.mode or "n"
+      local opts = { desc = key.desc }
+      vim.keymap.set(mode, key[1], key[2], opts)
+    end
   end
 
   vim.api.nvim_create_autocmd("VimLeavePre", {

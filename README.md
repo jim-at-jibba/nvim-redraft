@@ -38,8 +38,8 @@ https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
     require("nvim-redraft").setup({
       -- Optional configuration
       system_prompt = "You are a code editing assistant...",
-      keybindings = {
-        visual_edit = "<leader>ae",
+      keys = {
+        { "<leader>ae", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
       },
     })
   end,
@@ -88,8 +88,9 @@ export XAI_API_KEY="your-xai-api-key-here"
 ```lua
 require("nvim-redraft").setup({
   system_prompt = "You are a code editing assistant. Apply the requested changes to the code and return only the modified code without explanations.",
-  keybindings = {
-    visual_edit = "<leader>ae",
+  keys = {
+    { "<leader>ae", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
+    { "<leader>am", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
   },
   llm = {
     provider = "openai",       -- "openai", "anthropic", or "xai"
@@ -144,10 +145,7 @@ function add(a, b) {
 ```lua
 {
   system_prompt = string,      -- Custom system prompt for the LLM
-  keybindings = {
-    visual_edit = string,      -- Keybinding for visual mode edit (default: "<leader>ae")
-    select_model = string,     -- Keybinding to open model selector (default: "<leader>am")
-  },
+  keys = table,                -- Array of keybindings in the format: { key, function, mode?, desc? }
   llm = {
     -- Single provider configuration (legacy, still supported)
     provider = string,         -- LLM provider: "openai", "anthropic", or "xai" (default: "openai")
@@ -275,21 +273,18 @@ When enabled, all plugin activity is logged to `~/.local/state/nvim/nvim-redraft
 
 ```lua
 require("nvim-redraft").setup({
-  keybindings = {
-    visual_edit = "<C-a>",   -- Use Ctrl+a for editing
-    select_model = "<C-m>",  -- Use Ctrl+m for model selector
+  keys = {
+    { "<C-a>", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
+    { "<C-m>", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
   },
 })
 ```
 
-To disable default keybindings:
+To disable default keybindings, pass an empty table:
 
 ```lua
 require("nvim-redraft").setup({
-  keybindings = {
-    visual_edit = false,
-    select_model = false,
-  },
+  keys = {},
 })
 ```
 
@@ -298,11 +293,11 @@ You can then create your own:
 ```lua
 vim.keymap.set("v", "<C-a>", function()
   require("nvim-redraft").edit()
-end)
+end, { desc = "AI Edit Selection" })
 
 vim.keymap.set("n", "<C-m>", function()
   require("nvim-redraft").select_model()
-end)
+end, { desc = "Select AI Model" })
 ```
 
 ## Commands
