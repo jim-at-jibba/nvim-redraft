@@ -167,8 +167,8 @@ CUSTOM KEYBINDINGS ~
 >lua
     require("nvim-redraft").setup({
       keys = {
-        { "<C-a>", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
-        { "<C-m>", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
+        { "<leader>ae", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
+        { "<leader>am", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
       },
     })
 <
