@@ -4,6 +4,7 @@ local ipc = require("nvim-redraft.ipc")
 local replace = require("nvim-redraft.replace")
 local logger = require("nvim-redraft.logger")
 local spinner = require("nvim-redraft.spinner")
+local model_selector = require("nvim-redraft.model_selector")
 
 local M = {}
 
@@ -23,12 +24,16 @@ Generate a sparse edit showing only the changes needed:
 - Return ONLY the modified code, no explanations or markdown formatting
 
 Be intelligent about preserving code structure, indentation, and style.]],
-  keybindings = {
-    visual_edit = "<leader>ae",
+  keys = {
+    { "<leader>ae", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
+    { "<leader>am", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
   },
   llm = {
     provider = "openai",
     model = nil,
+    models = nil,
+    default_model_index = 1,
+    current_index = 1,
     timeout = 30000,
     base_url = nil,
     max_output_tokens = nil,
@@ -55,15 +60,80 @@ function M.setup(opts)
     error("llm.timeout must be a positive number")
   end
 
+  if type(opts.llm) == "table" and opts.llm.models and (opts.llm.provider or opts.llm.model) then
+    vim.notify(
+      "[nvim-redraft] Both llm.models and llm.provider/model configured. Using llm.models.",
+      vim.log.levels.WARN
+    )
+  end
+
   M.config = vim.tbl_deep_extend("force", M.config, opts)
+
+  if not M.config.llm.models then
+    if M.config.llm.provider or M.config.llm.model then
+      M.config.llm.models = {
+        {
+          provider = M.config.llm.provider or "openai",
+          model = M.config.llm.model,
+        },
+      }
+    else
+      M.config.llm.models = {
+        { provider = "openai", model = nil },
+      }
+    end
+  end
+
+  if type(M.config.llm.models) ~= "table" or #M.config.llm.models == 0 then
+    error("llm.models must be a non-empty array of model configurations")
+  end
+
+  for i, model_config in ipairs(M.config.llm.models) do
+    if type(model_config) ~= "table" then
+      error(string.format("llm.models[%d] must be a table", i))
+    end
+    if not model_config.provider then
+      error(string.format("llm.models[%d] must have a provider field", i))
+    end
+    local valid_providers = { openai = true, anthropic = true, xai = true }
+    if not valid_providers[model_config.provider] then
+      error(
+        string.format(
+          "llm.models[%d].provider must be one of: openai, anthropic, xai (got: %s)",
+          i,
+          model_config.provider
+        )
+      )
+    end
+  end
+
+  if M.config.llm.default_model_index then
+    if
+      type(M.config.llm.default_model_index) ~= "number"
+      or M.config.llm.default_model_index < 1
+      or M.config.llm.default_model_index > #M.config.llm.models
+    then
+      error(
+        string.format(
+          "llm.default_model_index must be between 1 and %d",
+          #M.config.llm.models
+        )
+      )
+    end
+    M.config.llm.current_index = M.config.llm.default_model_index
+  else
+    M.config.llm.current_index = 1
+  end
 
   logger.init(M.config)
   ipc.config = M.config
 
-  if M.config.keybindings.visual_edit then
-    vim.keymap.set("v", M.config.keybindings.visual_edit, function()
-      M.edit()
-    end, { desc = "AI Edit Selection" })
+  if M.config.keys then
+    for _, key in ipairs(M.config.keys) do
+      local mode = key.mode or "n"
+      local opts = { desc = key.desc }
+      vim.keymap.set(mode, key[1], key[2], opts)
+    end
   end
 
   vim.api.nvim_create_autocmd("VimLeavePre", {
@@ -71,6 +141,21 @@ function M.setup(opts)
       ipc.stop_service()
     end,
   })
+end
+
+function M.select_model()
+  model_selector.get_model_selection(M.config.llm.models, M.config.llm.current_index, function(index)
+    if index and index ~= M.config.llm.current_index then
+      M.config.llm.current_index = index
+      local selected = M.config.llm.models[index]
+      local display_name = selected.label or (selected.provider .. ": " .. (selected.model or "default"))
+      vim.notify(
+        string.format("[nvim-redraft] Switched to %s", display_name),
+        vim.log.levels.INFO
+      )
+      logger.info("select_model", string.format("Switched to model index %d: %s", index, display_name))
+    end
+  end)
 end
 
 function M.edit()
@@ -100,14 +185,20 @@ function M.edit()
     )
     logger.debug("edit", "System prompt:", M.config.system_prompt)
 
+    local current_model = M.config.llm.models[M.config.llm.current_index]
+    logger.debug(
+      "edit",
+      string.format("Using model: %s (provider: %s)", current_model.model or "default", current_model.provider)
+    )
+
     spinner.start("Processing edit...")
 
     ipc.send_request({
       code = sel.text,
       instruction = instruction,
       systemPrompt = M.config.system_prompt,
-      provider = M.config.llm.provider,
-      model = M.config.llm.model,
+      provider = current_model.provider,
+      model = current_model.model,
       baseURL = M.config.llm.base_url,
       maxOutputTokens = M.config.llm.max_output_tokens,
     }, function(result, error)
