@@ -8,6 +8,7 @@ https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
 
 - Select code in visual mode and apply AI edits inline
 - No confirmation dialogs - seamless editing experience
+- Switch between multiple LLM providers and models on the fly
 - Customizable system prompts
 - Configurable keybindings
 - Built with Lua and TypeScript for optimal performance
@@ -106,6 +107,10 @@ require("nvim-redraft").setup({
 3. Enter your editing instruction in the prompt
 4. The AI will apply the changes inline
 
+### Switching Models
+
+If you have multiple models configured, press `<leader>am` (or your configured keybinding) to open the model selector and switch between them on the fly.
+
 ### Example
 
 Select this code:
@@ -141,10 +146,18 @@ function add(a, b) {
   system_prompt = string,      -- Custom system prompt for the LLM
   keybindings = {
     visual_edit = string,      -- Keybinding for visual mode edit (default: "<leader>ae")
+    select_model = string,     -- Keybinding to open model selector (default: "<leader>am")
   },
   llm = {
+    -- Single provider configuration (legacy, still supported)
     provider = string,         -- LLM provider: "openai", "anthropic", or "xai" (default: "openai")
     model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, grok-4-fast-non-reasoning for xAI)
+    
+    -- Multi-model configuration (recommended)
+    models = table,            -- Array of {provider, model, label?} tables for multiple models
+    default_model_index = number, -- Index of default model to use (default: 1)
+    
+    -- Common settings
     timeout = number,          -- Request timeout in milliseconds (default: 30000)
     max_output_tokens = number,-- Maximum tokens in LLM response (default: 4096)
   },
@@ -161,9 +174,40 @@ function add(a, b) {
 
 ### Provider Configuration
 
-The plugin supports multiple LLM providers. Choose the one that best fits your needs:
+The plugin supports multiple LLM providers. You can configure a single provider or multiple providers that you can switch between on the fly.
 
-#### OpenAI (default)
+#### Multiple Models Configuration (Recommended)
+
+Configure multiple provider/model combinations and switch between them with `<leader>am`:
+
+```lua
+require("nvim-redraft").setup({
+  llm = {
+    models = {
+      { provider = "openai", model = "gpt-4o-mini", label = "GPT-4o Mini" },
+      { provider = "openai", model = "gpt-4o", label = "GPT-4o" },
+      { provider = "anthropic", model = "claude-3-5-sonnet-20241022", label = "Claude 3.5 Sonnet" },
+      { provider = "xai", model = "grok-4-fast-non-reasoning", label = "Grok 4 Fast" },
+    },
+    default_model_index = 1,  -- Optional: start with first model
+  },
+})
+```
+
+The `label` field is optional. If omitted, the display name will be `"provider: model"`.
+
+Set environment variables for the providers you're using:
+```bash
+export OPENAI_API_KEY="your-openai-api-key"
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+export XAI_API_KEY="your-xai-api-key"
+```
+
+#### Single Provider Configuration (Legacy)
+
+The original single-provider configuration is still fully supported:
+
+##### OpenAI (default)
 ```lua
 require("nvim-redraft").setup({
   llm = {
@@ -178,7 +222,7 @@ Set environment variable:
 export OPENAI_API_KEY="your-openai-api-key"
 ```
 
-#### Anthropic
+##### Anthropic
 ```lua
 require("nvim-redraft").setup({
   llm = {
@@ -193,7 +237,7 @@ Set environment variable:
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
 ```
 
-#### xAI
+##### xAI
 ```lua
 require("nvim-redraft").setup({
   llm = {
@@ -232,17 +276,19 @@ When enabled, all plugin activity is logged to `~/.local/state/nvim/nvim-redraft
 ```lua
 require("nvim-redraft").setup({
   keybindings = {
-    visual_edit = "<C-a>",  -- Use Ctrl+a instead
+    visual_edit = "<C-a>",   -- Use Ctrl+a for editing
+    select_model = "<C-m>",  -- Use Ctrl+m for model selector
   },
 })
 ```
 
-To disable the default keybinding:
+To disable default keybindings:
 
 ```lua
 require("nvim-redraft").setup({
   keybindings = {
     visual_edit = false,
+    select_model = false,
   },
 })
 ```
@@ -252,6 +298,10 @@ You can then create your own:
 ```lua
 vim.keymap.set("v", "<C-a>", function()
   require("nvim-redraft").edit()
+end)
+
+vim.keymap.set("n", "<C-m>", function()
+  require("nvim-redraft").select_model()
 end)
 ```
 
