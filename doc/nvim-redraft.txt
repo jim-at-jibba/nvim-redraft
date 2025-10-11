@@ -162,7 +162,7 @@ Default models: `gpt-4o-mini` (OpenAI), `claude-3-5-sonnet-20241022`
 (Anthropic), `grok-4-fast-non-reasoning` (xAI).
 
 
-CUSTOM KEYBINDINGS ~
+DEFAULT KEYBINDINGS ~
 
 >lua
     require("nvim-redraft").setup({
