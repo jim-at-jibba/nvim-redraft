@@ -132,7 +132,7 @@ require("nvim-redraft").setup({
 
 Default models: `gpt-4o-mini` (OpenAI), `claude-3-5-sonnet-20241022` (Anthropic), `grok-4-fast-non-reasoning` (xAI).
 
-### Custom Keybindings
+### Default Keybindings
 
 ```lua
 require("nvim-redraft").setup({
