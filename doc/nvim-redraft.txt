@@ -1,4 +1,4 @@
-*nvim-redraft.txt*      For Neovim >= 11.0.0      Last change: 2025 October 10
+*nvim-redraft.txt*      For Neovim >= 11.0.0      Last change: 2025 October 11
 
 ==============================================================================
 Table of Contents                             *nvim-redraft-table-of-contents*
@@ -119,6 +119,7 @@ SETUP                                        *nvim-redraft-nvim-redraft-setup*
         provider = "openai",       -- "openai", "anthropic", or "xai"
         model = "gpt-4o-mini",     -- Model name (optional, uses provider default if omitted)
         timeout = 30000,
+        max_output_tokens = 4096,  -- Maximum tokens in LLM response (optional, default: 4096)
       },
     })
 <
@@ -174,6 +175,7 @@ OPTIONS ~
         provider = string,         -- LLM provider: "openai", "anthropic", or "xai" (default: "openai")
         model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, grok-4-fast-non-reasoning for xAI)
         timeout = number,          -- Request timeout in milliseconds (default: 30000)
+        max_output_tokens = number,-- Maximum tokens in LLM response (default: 4096)
       },
       input = {
         prompt = string,           -- Input prompt text (default: "AI Edit: ")
