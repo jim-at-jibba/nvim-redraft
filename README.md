@@ -137,8 +137,8 @@ Default models: `gpt-4o-mini` (OpenAI), `claude-3-5-sonnet-20241022` (Anthropic)
 ```lua
 require("nvim-redraft").setup({
   keys = {
-    { "<C-a>", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
-    { "<C-m>", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
+    { "<leader>ae", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
+    { "<leader>am", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
   },
 })
 ```
