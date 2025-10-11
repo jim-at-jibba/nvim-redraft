@@ -60,14 +60,14 @@ function M.setup(opts)
     error("llm.timeout must be a positive number")
   end
 
-  M.config = vim.tbl_deep_extend("force", M.config, opts)
-
-  if M.config.llm.models and (M.config.llm.provider or M.config.llm.model) then
+  if type(opts.llm) == "table" and opts.llm.models and (opts.llm.provider or opts.llm.model) then
     vim.notify(
       "[nvim-redraft] Both llm.models and llm.provider/model configured. Using llm.models.",
       vim.log.levels.WARN
     )
   end
+
+  M.config = vim.tbl_deep_extend("force", M.config, opts)
 
   if not M.config.llm.models then
     if M.config.llm.provider or M.config.llm.model then
