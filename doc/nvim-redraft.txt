@@ -6,11 +6,8 @@ Table of Contents                             *nvim-redraft-table-of-contents*
 1. nvim-redraft                                    |nvim-redraft-nvim-redraft|
   - Features                              |nvim-redraft-nvim-redraft-features|
   - Installation                      |nvim-redraft-nvim-redraft-installation|
-  - Setup                                    |nvim-redraft-nvim-redraft-setup|
-  - Usage                                    |nvim-redraft-nvim-redraft-usage|
+  - Quick Start                        |nvim-redraft-nvim-redraft-quick-start|
   - Configuration                    |nvim-redraft-nvim-redraft-configuration|
-  - Commands                              |nvim-redraft-nvim-redraft-commands|
-  - Environment Variables    |nvim-redraft-nvim-redraft-environment-variables|
   - Troubleshooting                |nvim-redraft-nvim-redraft-troubleshooting|
   - Development                        |nvim-redraft-nvim-redraft-development|
   - License                                |nvim-redraft-nvim-redraft-license|
@@ -29,8 +26,8 @@ FEATURES                                  *nvim-redraft-nvim-redraft-features*
 
 - Select code in visual mode and apply AI edits inline
 - No confirmation dialogs - seamless editing experience
-- Customizable system prompts
-- Configurable keybindings
+- Switch between multiple LLM providers and models on the fly
+- Customizable system prompts and keybindings
 - Built with Lua and TypeScript for optimal performance
 
 
@@ -42,36 +39,27 @@ PREREQUISITES ~
 - Neovim >= 0.8.0
 - Node.js >= 18.0.0
 - Snacks.nvim <https://github.com/folke/snacks.nvim> with input support
-- API key for at least one supported provider:
-    - OpenAI API key (get one here <https://platform.openai.com/api-keys>)
-    - Anthropic API key (get one here <https://console.anthropic.com/>)
-    - xAI API key (get one here <https://console.x.ai/>)
+- API key for at least one supported provider (OpenAI <https://platform.openai.com/api-keys>, Anthropic <https://console.anthropic.com/>, xAI <https://console.x.ai/>)
 
 
-USING LAZY.NVIM ~
+LAZY.NVIM ~
 
 >lua
     {
       "jim-at-jibba/nvim-redraft",
       dependencies = {
-        { "folke/snacks.nvim", opts = { input = {} } },
+        { "folke/snacks.nvim", opts = { input = {}, picker = {} } },
       },
       event = "VeryLazy",
-      config = function()
-        require("nvim-redraft").setup({
-          -- Optional configuration
-          system_prompt = "You are a code editing assistant...",
-          keybindings = {
-            visual_edit = "<leader>ae",
-          },
-        })
-      end,
       build = "cd ts && npm install && npm run build",
+      opts = {
+        -- See Configuration section for options
+      },
     }
 <
 
 
-USING PACKER.NVIM ~
+PACKER.NVIM ~
 
 >lua
     use {
@@ -92,45 +80,19 @@ USING PACKER.NVIM ~
 <
 
 
-SETUP                                        *nvim-redraft-nvim-redraft-setup*
+QUICK START                            *nvim-redraft-nvim-redraft-quick-start*
 
-1. Set your API key(s):
+1. Set your API key(s) in your shell profile:
 
 >bash
-    # For OpenAI (default provider)
-    export OPENAI_API_KEY="your-openai-api-key-here"
-    
-    # For Anthropic
-    export ANTHROPIC_API_KEY="your-anthropic-api-key-here"
-    
-    # For xAI
-    export XAI_API_KEY="your-xai-api-key-here"
+    export OPENAI_API_KEY="your-openai-api-key"
+    export ANTHROPIC_API_KEY="your-anthropic-api-key"
+    export XAI_API_KEY="your-xai-api-key"
 <
-
-1. Configure the plugin in your Neovim config:
-
->lua
-    require("nvim-redraft").setup({
-      system_prompt = "You are a code editing assistant. Apply the requested changes to the code and return only the modified code without explanations.",
-      keybindings = {
-        visual_edit = "<leader>ae",
-      },
-      llm = {
-        provider = "openai",       -- "openai", "anthropic", or "xai"
-        model = "gpt-4o-mini",     -- Model name (optional, uses provider default if omitted)
-        timeout = 30000,
-        max_output_tokens = 4096,  -- Maximum tokens in LLM response (optional, default: 4096)
-      },
-    })
-<
-
-
-USAGE                                        *nvim-redraft-nvim-redraft-usage*
 
 1. Select code in visual mode (`v`, `V`, or `Ctrl-v`)
-2. Press `<leader>ae` (or your configured keybinding)
-3. Enter your editing instruction in the prompt
-4. The AI will apply the changes inline
+2. Press `<leader>ae` and enter your instruction
+3. The AI applies changes inline
 
 
 EXAMPLE ~
@@ -163,279 +125,145 @@ Result:
 CONFIGURATION                        *nvim-redraft-nvim-redraft-configuration*
 
 
-OPTIONS ~
+MULTIPLE MODELS (RECOMMENDED) ~
 
->lua
-    {
-      system_prompt = string,      -- Custom system prompt for the LLM
-      keybindings = {
-        visual_edit = string,      -- Keybinding for visual mode edit (default: "<leader>ae")
-      },
-      llm = {
-        provider = string,         -- LLM provider: "openai", "anthropic", or "xai" (default: "openai")
-        model = string,            -- Model name (optional, defaults: gpt-4o-mini for OpenAI, claude-3-5-sonnet-20241022 for Anthropic, grok-4-fast-non-reasoning for xAI)
-        timeout = number,          -- Request timeout in milliseconds (default: 30000)
-        max_output_tokens = number,-- Maximum tokens in LLM response (default: 4096)
-      },
-      input = {
-        prompt = string,           -- Input prompt text (default: "AI Edit: ")
-        icon = string,             -- Input icon (default: "󱚣")
-        win = table,               -- Snacks.input window options (relative, row, col, title_pos, etc.)
-      },
-      debug = boolean,             -- Enable debug logging (default: false)
-      log_file = string,           -- Log file path (default: "~/.local/state/nvim/nvim-redraft.log")
-      debug_max_log_size = number, -- Max chars to log for code content (default: 5000, 0 = unlimited)
-    }
-<
-
-
-PROVIDER CONFIGURATION ~
-
-The plugin supports multiple LLM providers. Choose the one that best fits your
-needs:
-
-
-OPENAI (DEFAULT)
+Configure multiple provider/model combinations and switch between them with
+`<leader>am`:
 
 >lua
     require("nvim-redraft").setup({
       llm = {
-        provider = "openai",
-        model = "gpt-4o-mini",  -- Or "gpt-4o" etc.
+        models = {
+          { provider = "openai", model = "gpt-4o-mini", label = "GPT-4o Mini" },
+          { provider = "openai", model = "gpt-4o", label = "GPT-4o" },
+          { provider = "anthropic", model = "claude-3-5-sonnet-20241022", label = "Claude 3.5 Sonnet" },
+          { provider = "xai", model = "grok-4-fast-non-reasoning", label = "Grok 4 Fast" },
+        },
+        default_model_index = 1,
       },
     })
 <
 
-Set environment variable:
-
->bash
-    export OPENAI_API_KEY="your-openai-api-key"
-<
+The `label` field is optional - defaults to `"provider: model"`.
 
 
-ANTHROPIC
+SINGLE PROVIDER ~
 
 >lua
     require("nvim-redraft").setup({
       llm = {
-        provider = "anthropic",
-        model = "claude-3-7-sonnet-latest",  -- Or other Claude models
+        provider = "openai",  -- "openai", "anthropic", or "xai"
+        model = "gpt-4o-mini",
       },
     })
 <
 
-Set environment variable:
-
->bash
-    export ANTHROPIC_API_KEY="your-anthropic-api-key"
-<
-
-
-XAI
-
->lua
-    require("nvim-redraft").setup({
-      llm = {
-        provider = "xai",
-        model = "grok-4-fast-non-reasoning",  -- Or other Grok models
-      },
-    })
-<
-
-Set environment variable:
-
->bash
-    export XAI_API_KEY="your-xai-api-key"
-<
-
-
-DEBUG LOGGING ~
-
-Enable detailed logging to troubleshoot issues:
-
->lua
-    require("nvim-redraft").setup({
-      debug = true,  -- Enable debug logging
-    })
-<
-
-When enabled, all plugin activity is logged to
-`~/.local/state/nvim/nvim-redraft.log`, including: - User instructions and
-selected code - Sparse edits generated by the LLM - API requests/responses and
-timing - Code transformations and replacements - All errors with stack traces
-
-**Warning:** Log files contain full code content. Store them securely and
-delete when done debugging.
+Default models: `gpt-4o-mini` (OpenAI), `claude-3-5-sonnet-20241022`
+(Anthropic), `grok-4-fast-non-reasoning` (xAI).
 
 
 CUSTOM KEYBINDINGS ~
 
 >lua
     require("nvim-redraft").setup({
-      keybindings = {
-        visual_edit = "<C-a>",  -- Use Ctrl+a instead
+      keys = {
+        { "<C-a>", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
+        { "<C-m>", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
       },
     })
 <
 
-To disable the default keybinding:
+Or disable and define your own:
 
 >lua
     require("nvim-redraft").setup({
-      keybindings = {
-        visual_edit = false,
-      },
+      keys = {},
     })
-<
-
-You can then create your own:
-
->lua
+    
     vim.keymap.set("v", "<C-a>", function()
       require("nvim-redraft").edit()
-    end)
+    end, { desc = "AI Edit Selection" })
 <
 
 
-COMMANDS                                  *nvim-redraft-nvim-redraft-commands*
+ALL OPTIONS ~
 
-- `:RedraftEdit` - Trigger AI edit on visual selection
-
-
-ENVIRONMENT VARIABLES        *nvim-redraft-nvim-redraft-environment-variables*
-
-- `OPENAI_API_KEY` - Your OpenAI API key (required if using OpenAI provider)
-- `ANTHROPIC_API_KEY` - Your Anthropic API key (required if using Anthropic provider)
-- `XAI_API_KEY` - Your xAI API key (required if using xAI provider)
-
-You only need to set the API key for the provider you’re using.
+>lua
+    {
+      system_prompt = string,      -- Custom system prompt for the LLM
+      keys = table,                -- Array of keybindings: { key, function, mode?, desc? }
+      llm = {
+        provider = string,         -- "openai", "anthropic", or "xai" (default: "openai")
+        model = string,            -- Model name (optional, uses provider default)
+        models = table,            -- Array of {provider, model, label?} for multi-model setup
+        default_model_index = number, -- Starting model index (default: 1)
+        timeout = number,          -- Request timeout in ms (default: 30000)
+        max_output_tokens = number,-- Max response tokens (default: 4096)
+      },
+      input = {
+        prompt = string,           -- Input prompt text (default: "AI Edit: ")
+        icon = string,             -- Input icon (default: "󱚣")
+        win = table,               -- Snacks.input window options
+      },
+      debug = boolean,             -- Enable debug logging (default: false)
+      log_file = string,           -- Log file path (default: "~/.local/state/nvim/nvim-redraft.log")
+      debug_max_log_size = number, -- Max chars to log (default: 5000, 0 = unlimited)
+    }
+<
 
 
 TROUBLESHOOTING                    *nvim-redraft-nvim-redraft-troubleshooting*
 
 
-ENABLE DEBUG LOGGING ~
+DEBUG LOGGING ~
 
-For any issues, enable debug logging first:
-
->lua
-    require("nvim-redraft").setup({
-      debug = true,
-    })
-<
-
-Then check the log file at `~/.local/state/nvim/nvim-redraft.log` for detailed
-information about what’s happening.
-
-
-“OPENAI_API_KEY NOT SET”, “ANTHROPIC_API_KEY NOT SET”, OR “XAI_API_KEY NOT SET” ERROR ~
-
-Make sure you’ve exported the API key for your chosen provider:
-
->bash
-    # For OpenAI
-    export OPENAI_API_KEY="your-openai-api-key"
-    
-    # For Anthropic
-    export ANTHROPIC_API_KEY="your-anthropic-api-key"
-    
-    # For xAI
-    export XAI_API_KEY="your-xai-api-key"
-<
-
-Add them to your `.bashrc`, `.zshrc`, or `.profile` to persist across sessions.
-
-
-TYPESCRIPT SERVICE FAILS TO START ~
-
-Ensure you’ve built the TypeScript service:
-
->bash
-    cd ts
-    npm install
-    npm run build
-<
-
-Verify that `ts/dist/index.js` exists.
-
-Check debug logs for detailed error messages.
-
-
-“FAILED TO START TYPESCRIPT SERVICE” ~
-
-Check that Node.js is installed and in your PATH:
-
->bash
-    node --version  # Should be >= 18.0.0
-<
-
-Enable debug mode and check `~/.local/state/nvim/nvim-redraft.log` for service
-startup errors.
-
-
-LARGE SELECTIONS TIMEOUT ~
-
-For very large code selections, increase the timeout:
-
->lua
-    require("nvim-redraft").setup({
-      llm = {
-        timeout = 60000,  -- 60 seconds
-      },
-    })
-<
-
-
-EDITS NOT APPLYING CORRECTLY ~
-
-Enable debug logging to see the full transformation:
+Enable detailed logging for any issues:
 
 >lua
     require("nvim-redraft").setup({
       debug = true,
+      log_file = "~/.local/state/nvim/nvim-redraft.log",  -- optional, this is the default
     })
 <
 
-The log will show: - Original selected code - Sparse edit generated - Final
-merged code - Any errors in the transformation
+The log contains: - User instructions and selected code - LLM
+requests/responses and timing - Code transformations - All errors with stack
+traces
+
+**Warning:** Logs contain full code content. Store securely and delete when
+done.
 
 
-FINDING THE LOG FILE ~
+COMMON ISSUES ~
 
-Default location: `~/.local/state/nvim/nvim-redraft.log`
+  -----------------------------------------------------------------------
+  Issue                         Solution
+  ----------------------------- -----------------------------------------
+  API key not set               Export the appropriate key:
+                                OPENAI_API_KEY, ANTHROPIC_API_KEY, or
+                                XAI_API_KEY in your shell profile
+                                (.bashrc, .zshrc, etc.)
 
-Custom location:
+  TypeScript service fails      Run
+                                cd ts && npm install && npm run build,
+                                verify ts/dist/index.js exists
 
->lua
-    require("nvim-redraft").setup({
-      debug = true,
-      log_file = "/path/to/your/debug.log",
-    })
-<
+  Service won’t start           Check Node.js >= 18.0.0 with
+                                node --version
 
+  Large selections timeout      Increase timeout:
+                                llm = { timeout = 60000 }
+
+  Edits not applying            Enable debug logging to see
+                                transformation steps
+  -----------------------------------------------------------------------
 
 DEVELOPMENT                            *nvim-redraft-nvim-redraft-development*
 
-
-RUNNING TESTS ~
-
 >bash
-    make test
-<
-
-
-FORMATTING ~
-
->bash
-    stylua lua/
-<
-
-
-BUILDING TYPESCRIPT ~
-
->bash
-    cd ts
-    npm run build
+    make test          # Run tests
+    stylua lua/        # Format Lua code
+    cd ts && npm run build  # Build TypeScript service
 <
 
 
