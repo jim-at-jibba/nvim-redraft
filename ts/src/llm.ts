@@ -2,6 +2,7 @@ import { generateText, LanguageModel } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createXai } from "@ai-sdk/xai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { logger } from "./logger";
 
 export interface EditRequest {
@@ -215,6 +216,21 @@ class XaiProvider extends BaseLLMProvider {
   }
 }
 
+class OpenRouterProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createOpenRouter({ apiKey: this.apiKey });
+  }
+
+  protected getGenerateTextOptions(
+    method: "enhance" | "apply",
+    systemPrompt?: string,
+  ): Record<string, any> {
+    return {
+      maxOutputTokens: this.maxOutputTokens,
+    };
+  }
+}
+
 /**
  * Provider registry maps provider names to factory functions.
  * To add a new provider, add one line here after implementing the LLMProvider interface.
@@ -226,6 +242,7 @@ const PROVIDERS: Record<
   openai: (apiKey, model, baseURL, maxOutputTokens) => new OpenAIProvider(apiKey, model, maxOutputTokens),
   anthropic: (apiKey, model, baseURL, maxOutputTokens) => new AnthropicProvider(apiKey, model, maxOutputTokens),
   xai: (apiKey, model, baseURL, maxOutputTokens) => new XaiProvider(apiKey, model, maxOutputTokens),
+  openrouter: (apiKey, model, baseURL, maxOutputTokens) => new OpenRouterProvider(apiKey, model, maxOutputTokens),
 };
 
 /**
@@ -236,6 +253,7 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
   openai: "OPENAI_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
   xai: "XAI_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
 };
 
 /**
@@ -246,6 +264,7 @@ export const DEFAULT_MODELS: Record<string, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-20241022",
   xai: "grok-4-fast-non-reasoning",
+  openrouter: "anthropic/claude-3.5-sonnet",
 };
 
 export function createProvider(

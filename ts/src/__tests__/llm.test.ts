@@ -13,6 +13,7 @@ describe("LLM Provider System", () => {
       expect(PROVIDER_API_KEYS.openai).toBe("OPENAI_API_KEY");
       expect(PROVIDER_API_KEYS.anthropic).toBe("ANTHROPIC_API_KEY");
       expect(PROVIDER_API_KEYS.xai).toBe("XAI_API_KEY");
+      expect(PROVIDER_API_KEYS.openrouter).toBe("OPENROUTER_API_KEY");
     });
   });
 
@@ -21,6 +22,7 @@ describe("LLM Provider System", () => {
       expect(DEFAULT_MODELS.openai).toBe("gpt-4o-mini");
       expect(DEFAULT_MODELS.anthropic).toBe("claude-3-5-sonnet-20241022");
       expect(DEFAULT_MODELS.xai).toBe("grok-4-fast-non-reasoning");
+      expect(DEFAULT_MODELS.openrouter).toBe("anthropic/claude-3.5-sonnet");
     });
   });
 
@@ -50,6 +52,11 @@ describe("LLM Provider System", () => {
       expect(getApiKey("xai")).toBe("test-xai-key");
     });
 
+    it("should get OpenRouter API key from environment", () => {
+      process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+      expect(getApiKey("openrouter")).toBe("test-openrouter-key");
+    });
+
     it("should throw error for unknown provider", () => {
       expect(() => getApiKey("unknown")).toThrow("Unknown provider: unknown");
     });
@@ -67,6 +74,7 @@ describe("LLM Provider System", () => {
       expect(getDefaultModel("openai")).toBe("gpt-4o-mini");
       expect(getDefaultModel("anthropic")).toBe("claude-3-5-sonnet-20241022");
       expect(getDefaultModel("xai")).toBe("grok-4-fast-non-reasoning");
+      expect(getDefaultModel("openrouter")).toBe("anthropic/claude-3.5-sonnet");
     });
 
     it("should return empty string for unknown provider", () => {
@@ -93,6 +101,12 @@ describe("LLM Provider System", () => {
 
     it("should create xAI provider", () => {
       const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
+      expect(provider).toBeDefined();
+      expect(provider.applyEdit).toBeDefined();
+    });
+
+    it("should create OpenRouter provider", () => {
+      const provider = createProvider("openrouter", "test-key", "anthropic/claude-3.5-sonnet");
       expect(provider).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
     });
@@ -189,6 +203,11 @@ describe("Provider interfaces", () => {
 
   it("should implement LLMProvider interface - xAI", () => {
     const provider = createProvider("xai", "test-key", "grok-4-fast-non-reasoning");
+    expect(typeof provider.applyEdit).toBe("function");
+  });
+
+  it("should implement LLMProvider interface - OpenRouter", () => {
+    const provider = createProvider("openrouter", "test-key", "anthropic/claude-3.5-sonnet");
     expect(typeof provider.applyEdit).toBe("function");
   });
 });

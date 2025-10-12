@@ -29,6 +29,7 @@
     "@ai-sdk/anthropic": "^2.0.25",
     "@ai-sdk/openai": "^2.0.46",
     "@ai-sdk/xai": "^2.0.24",
+    "@openrouter/ai-sdk-provider": "^1.2.0",
     "ai": "^5.0.64"
   }
 }
