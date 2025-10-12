@@ -40,7 +40,7 @@ The system SHALL allow users to customize AI edit keybindings.
 The system SHALL allow users to configure LLM provider, model, timeout, and multiple provider/model combinations.
 
 #### Scenario: Provider selection (legacy)
-- **WHEN** user sets `llm.provider` to "openai", "anthropic", or "xai" without `llm.models`
+- **WHEN** user sets `llm.provider` to "openai", "anthropic", "xai", or "openrouter" without `llm.models`
 - **THEN** the system uses the specified provider converted to a single-entry models array
 
 #### Scenario: Custom model name (legacy)
@@ -56,7 +56,7 @@ The system SHALL allow users to configure LLM provider, model, timeout, and mult
 - **THEN** system defaults to openai with default model in a single-entry models array
 
 #### Scenario: Invalid provider value
-- **WHEN** user provides a model entry with a provider value other than "openai", "anthropic", or "xai"
+- **WHEN** user provides a model entry with a provider value other than "openai", "anthropic", "xai", or "openrouter"
 - **THEN** setup() fails with clear validation error
 
 #### Scenario: Multiple models configuration takes precedence
@@ -84,6 +84,10 @@ The system SHALL document and validate required environment variables based on s
 #### Scenario: Anthropic API key required
 - **WHEN** provider is "anthropic" and first API request is made without `ANTHROPIC_API_KEY` set
 - **THEN** clear error message directs user to set the ANTHROPIC_API_KEY environment variable
+
+#### Scenario: OpenRouter API key required
+- **WHEN** provider is "openrouter" and first API request is made without `OPENROUTER_API_KEY` set
+- **THEN** clear error message directs user to set the OPENROUTER_API_KEY environment variable
 
 #### Scenario: API key present for selected provider
 - **WHEN** appropriate API key is set for selected provider
