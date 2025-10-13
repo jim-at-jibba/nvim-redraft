@@ -273,7 +273,7 @@ class CopilotProvider extends OpenAICompatibleProvider {
       return this.cachedBearerToken;
     }
 
-    const oauthToken = this.extractCopilotOAuthToken();
+    const oauthToken = this.extractCopilotToken();
     const bearerToken = await this.exchangeForBearerToken(oauthToken);
     return bearerToken;
   }
@@ -299,7 +299,8 @@ class CopilotProvider extends OpenAICompatibleProvider {
         );
       }
 
-      const data = await response.json();
+      type CopilotTokenResponse = { token: string; expires_at: number };
+      const data = (await response.json()) as CopilotTokenResponse;
       this.cachedBearerToken = data.token;
       this.tokenExpiresAt = data.expires_at;
 
@@ -318,7 +319,7 @@ class CopilotProvider extends OpenAICompatibleProvider {
     }
   }
 
-  private extractCopilotOAuthToken(): string {
+  public extractCopilotToken(): string {
     const configPath = path.join(
       os.homedir(),
       ".config/github-copilot/apps.json",

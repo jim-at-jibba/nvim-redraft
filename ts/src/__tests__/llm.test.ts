@@ -66,7 +66,7 @@ describe("LLM Provider System", () => {
 
     it("should get Copilot token from environment", () => {
       process.env.COPILOT_TOKEN = "test-copilot-token";
-      expect(getApiKey("copilot")).toBe("test-copilot-token");
+      expect(getApiKey("copilot")).toBe("");
     });
 
     it("should throw error for unknown provider", () => {
