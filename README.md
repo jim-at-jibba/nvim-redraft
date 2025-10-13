@@ -1,6 +1,6 @@
 # nvim-redraft
 
-A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic, xAI).
+A Neovim plugin for AI-powered inline code editing with support for multiple LLM providers (OpenAI, Anthropic, xAI, GitHub Copilot, OpenRouter).
 
 https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
 
@@ -19,7 +19,8 @@ https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
 - Neovim >= 0.8.0
 - Node.js >= 18.0.0
 - [Snacks.nvim](https://github.com/folke/snacks.nvim) with input support
-- API key for at least one supported provider ([OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://console.anthropic.com/), [xAI](https://console.x.ai/))
+- API key for at least one supported provider ([OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://console.anthropic.com/), [xAI](https://console.x.ai/), [OpenRouter](https://openrouter.ai/))
+- For GitHub Copilot: [copilot.lua](https://github.com/zbirenbaum/copilot.lua) installed and authenticated
 
 ### lazy.nvim
 
@@ -65,7 +66,10 @@ use {
 export OPENAI_API_KEY="your-openai-api-key"
 export ANTHROPIC_API_KEY="your-anthropic-api-key"
 export XAI_API_KEY="your-xai-api-key"
+export OPENROUTER_API_KEY="your-openrouter-api-key"
 ```
+
+**GitHub Copilot:** No API key needed! If you have [copilot.lua](https://github.com/zbirenbaum/copilot.lua) installed and authenticated, the plugin automatically extracts your token.
 
 2. Select code in visual mode (`v`, `V`, or `Ctrl-v`)
 3. Press `<leader>ae` and enter your instruction
@@ -111,6 +115,8 @@ require("nvim-redraft").setup({
       { provider = "openai", model = "gpt-4o", label = "GPT-4o" },
       { provider = "anthropic", model = "claude-3-5-sonnet-20241022", label = "Claude 3.5 Sonnet" },
       { provider = "xai", model = "grok-4-fast-non-reasoning", label = "Grok 4 Fast" },
+      { provider = "copilot", model = "gpt-4o", label = "Copilot GPT-4o" },
+      { provider = "openrouter", model = "anthropic/claude-3.5-sonnet", label = "OpenRouter Claude" },
     },
     default_model_index = 1,
   },
@@ -124,13 +130,61 @@ The `label` field is optional - defaults to `"provider: model"`.
 ```lua
 require("nvim-redraft").setup({
   llm = {
-    provider = "openai",  -- "openai", "anthropic", or "xai"
+    provider = "openai",  -- "openai", "anthropic", "xai", "copilot", or "openrouter"
     model = "gpt-4o-mini",
   },
 })
 ```
 
-Default models: `gpt-4o-mini` (OpenAI), `claude-3-5-sonnet-20241022` (Anthropic), `grok-4-fast-non-reasoning` (xAI).
+Default models: `gpt-4o-mini` (OpenAI), `claude-3-5-sonnet-20241022` (Anthropic), `grok-4-fast-non-reasoning` (xAI), `gpt-4o` (Copilot), `anthropic/claude-3.5-sonnet` (OpenRouter).
+
+### GitHub Copilot Setup
+
+GitHub Copilot requires [copilot.lua](https://github.com/zbirenbaum/copilot.lua) to be installed and authenticated:
+
+1. Install copilot.lua:
+
+```lua
+-- lazy.nvim
+{
+  "zbirenbaum/copilot.lua",
+  cmd = "Copilot",
+  event = "InsertEnter",
+  config = function()
+    require("copilot").setup({
+      suggestion = { enabled = false },
+      panel = { enabled = false },
+    })
+  end,
+}
+```
+
+2. Authenticate with GitHub:
+   - Run `:Copilot auth` in Neovim, or
+   - Run `gh auth login` in your terminal
+
+3. Use Copilot as a provider:
+
+```lua
+require("nvim-redraft").setup({
+  llm = {
+    provider = "copilot",
+    model = "gpt-4o",  -- or "gpt-4-turbo"
+  },
+})
+```
+
+The plugin automatically extracts your Copilot OAuth token from `~/.config/github-copilot/apps.json` - no API key needed!
+
+### Using Other OpenAI-Compatible Providers
+
+The Copilot provider uses a generic OpenAI-compatible implementation that works with any API following the OpenAI chat completions format. This means you can also use:
+
+- **Local LLM servers**: LM Studio, Ollama with OpenAI endpoint
+- **Custom endpoints**: Self-hosted models, private deployments
+- **Other providers**: Any service implementing the OpenAI API
+
+To add a custom OpenAI-compatible provider, you'll need to modify the TypeScript source code in `ts/src/llm.ts`. See the `CopilotProvider` class as a reference implementation.
 
 ### Default Keybindings
 
@@ -162,7 +216,7 @@ end, { desc = "AI Edit Selection" })
   system_prompt = string,      -- Custom system prompt for the LLM
   keys = table,                -- Array of keybindings: { key, function, mode?, desc? }
   llm = {
-    provider = string,         -- "openai", "anthropic", or "xai" (default: "openai")
+    provider = string,         -- "openai", "anthropic", "xai", "copilot", or "openrouter" (default: "openai")
     model = string,            -- Model name (optional, uses provider default)
     models = table,            -- Array of {provider, model, label?} for multi-model setup
     default_model_index = number, -- Starting model index (default: 1)
@@ -205,7 +259,8 @@ The log contains:
 
 | Issue | Solution |
 |-------|----------|
-| **API key not set** | Export the appropriate key: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `XAI_API_KEY` in your shell profile (`.bashrc`, `.zshrc`, etc.) |
+| **API key not set** | Export the appropriate key: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, or `OPENROUTER_API_KEY` in your shell profile (`.bashrc`, `.zshrc`, etc.) |
+| **Copilot not authenticated** | Install [copilot.lua](https://github.com/zbirenbaum/copilot.lua) and run `:Copilot auth` or `gh auth login` |
 | **TypeScript service fails** | Run `cd ts && npm install && npm run build`, verify `ts/dist/index.js` exists |
 | **Service won't start** | Check Node.js >= 18.0.0 with `node --version` |
 | **Large selections timeout** | Increase timeout: `llm = { timeout = 60000 }` |

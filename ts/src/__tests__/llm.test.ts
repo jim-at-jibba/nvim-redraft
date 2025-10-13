@@ -6,6 +6,11 @@ import {
   PROVIDER_API_KEYS,
   DEFAULT_MODELS,
 } from "../llm";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+
+jest.mock("fs");
 
 describe("LLM Provider System", () => {
   describe("PROVIDER_API_KEYS", () => {
@@ -14,6 +19,7 @@ describe("LLM Provider System", () => {
       expect(PROVIDER_API_KEYS.anthropic).toBe("ANTHROPIC_API_KEY");
       expect(PROVIDER_API_KEYS.xai).toBe("XAI_API_KEY");
       expect(PROVIDER_API_KEYS.openrouter).toBe("OPENROUTER_API_KEY");
+      expect(PROVIDER_API_KEYS.copilot).toBe("COPILOT_TOKEN");
     });
   });
 
@@ -23,6 +29,7 @@ describe("LLM Provider System", () => {
       expect(DEFAULT_MODELS.anthropic).toBe("claude-3-5-sonnet-20241022");
       expect(DEFAULT_MODELS.xai).toBe("grok-4-fast-non-reasoning");
       expect(DEFAULT_MODELS.openrouter).toBe("anthropic/claude-3.5-sonnet");
+      expect(DEFAULT_MODELS.copilot).toBe("gpt-4o");
     });
   });
 
@@ -57,6 +64,11 @@ describe("LLM Provider System", () => {
       expect(getApiKey("openrouter")).toBe("test-openrouter-key");
     });
 
+    it("should get Copilot token from environment", () => {
+      process.env.COPILOT_TOKEN = "test-copilot-token";
+      expect(getApiKey("copilot")).toBe("test-copilot-token");
+    });
+
     it("should throw error for unknown provider", () => {
       expect(() => getApiKey("unknown")).toThrow("Unknown provider: unknown");
     });
@@ -75,6 +87,7 @@ describe("LLM Provider System", () => {
       expect(getDefaultModel("anthropic")).toBe("claude-3-5-sonnet-20241022");
       expect(getDefaultModel("xai")).toBe("grok-4-fast-non-reasoning");
       expect(getDefaultModel("openrouter")).toBe("anthropic/claude-3.5-sonnet");
+      expect(getDefaultModel("copilot")).toBe("gpt-4o");
     });
 
     it("should return empty string for unknown provider", () => {
@@ -209,5 +222,91 @@ describe("Provider interfaces", () => {
   it("should implement LLMProvider interface - OpenRouter", () => {
     const provider = createProvider("openrouter", "test-key", "anthropic/claude-3.5-sonnet");
     expect(typeof provider.applyEdit).toBe("function");
+  });
+
+  it("should implement LLMProvider interface - Copilot", () => {
+    const provider = createProvider("copilot", "test-key", "gpt-4o");
+    expect(typeof provider.applyEdit).toBe("function");
+  });
+});
+
+describe("Copilot Provider", () => {
+  const mockConfigPath = path.join(os.homedir(), ".config/github-copilot/apps.json");
+  const mockFs = fs as jest.Mocked<typeof fs>;
+
+  describe("Token extraction", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should extract token from valid config file", () => {
+      const mockConfig = {
+        "github.com": {
+          oauth_token: "ghu_test_token_123",
+        },
+      };
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      const provider = createProvider("copilot", "dummy", "gpt-4o");
+      expect(provider).toBeDefined();
+    });
+
+    it("should throw error when config file does not exist", () => {
+      mockFs.existsSync.mockReturnValue(false);
+
+      expect(() => {
+        const provider = createProvider("copilot", "dummy", "gpt-4o");
+        (provider as any).extractCopilotToken();
+      }).toThrow("Copilot not authenticated");
+    });
+
+    it("should throw error when config file is invalid JSON", () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue("invalid json");
+
+      expect(() => {
+        const provider = createProvider("copilot", "dummy", "gpt-4o");
+        (provider as any).extractCopilotToken();
+      }).toThrow("Copilot config file is corrupted");
+    });
+
+    it("should throw error when oauth_token is missing", () => {
+      const mockConfig = {
+        "github.com": {},
+      };
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockConfig));
+
+      expect(() => {
+        const provider = createProvider("copilot", "dummy", "gpt-4o");
+        (provider as any).extractCopilotToken();
+      }).toThrow("Copilot config missing authentication token");
+    });
+  });
+
+  describe("Provider creation", () => {
+    beforeEach(() => {
+      const mockConfig = {
+        "github.com": {
+          oauth_token: "ghu_test_token_123",
+        },
+      };
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockConfig));
+    });
+
+    it("should create Copilot provider with default model", () => {
+      const provider = createProvider("copilot", "test-key", "gpt-4o");
+      expect(provider).toBeDefined();
+      expect(provider.applyEdit).toBeDefined();
+    });
+
+    it("should create Copilot provider with custom model", () => {
+      const provider = createProvider("copilot", "test-key", "gpt-4-turbo");
+      expect(provider).toBeDefined();
+    });
   });
 });

@@ -68,7 +68,7 @@ class JSONRPCServer {
       logger.debug("server", `Using provider: ${providerName}, model: ${modelName}`);
 
       const apiKey = getApiKey(providerName);
-      if (!apiKey) {
+      if (!apiKey && providerName !== "copilot") {
         const keyName =
           providerName === "openai"
             ? "OPENAI_API_KEY"
