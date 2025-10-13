@@ -176,16 +176,6 @@ require("nvim-redraft").setup({
 
 The plugin automatically extracts your Copilot OAuth token from `~/.config/github-copilot/apps.json` - no API key needed!
 
-### Using Other OpenAI-Compatible Providers
-
-The Copilot provider uses a generic OpenAI-compatible implementation that works with any API following the OpenAI chat completions format. This means you can also use:
-
-- **Local LLM servers**: LM Studio, Ollama with OpenAI endpoint
-- **Custom endpoints**: Self-hosted models, private deployments
-- **Other providers**: Any service implementing the OpenAI API
-
-To add a custom OpenAI-compatible provider, you'll need to modify the TypeScript source code in `ts/src/llm.ts`. See the `CopilotProvider` class as a reference implementation.
-
 ### Default Keybindings
 
 ```lua
