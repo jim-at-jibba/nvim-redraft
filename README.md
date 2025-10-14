@@ -18,17 +18,34 @@ https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
 
 - Neovim >= 0.8.0
 - Node.js >= 18.0.0
-- [Snacks.nvim](https://github.com/folke/snacks.nvim) with input support
 - API key for at least one supported provider ([OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://console.anthropic.com/), [xAI](https://console.x.ai/), [OpenRouter](https://openrouter.ai/))
 - For GitHub Copilot: [copilot.lua](https://github.com/zbirenbaum/copilot.lua) installed and authenticated
 
+**Optional but recommended:**
+- [Snacks.nvim](https://github.com/folke/snacks.nvim) - Enhanced input UI with icons and custom styling. Without it, the plugin uses `vim.ui.input()` for prompts.
+
 ### lazy.nvim
+
+**Basic installation (no dependencies):**
+
+```lua
+{
+  "jim-at-jibba/nvim-redraft",
+  event = "VeryLazy",
+  build = "cd ts && npm install && npm run build",
+  opts = {
+    -- See Configuration section for options
+  },
+}
+```
+
+**With Snacks.nvim (recommended for enhanced UI):**
 
 ```lua
 {
   "jim-at-jibba/nvim-redraft",
   dependencies = {
-    { "folke/snacks.nvim", opts = { input = {}, picker = {} } },
+    { "folke/snacks.nvim", opts = { input = {} } },
   },
   event = "VeryLazy",
   build = "cd ts && npm install && npm run build",
@@ -39,6 +56,20 @@ https://github.com/user-attachments/assets/4124e8e5-27ce-4628-b005-e0d7b65a1392
 ```
 
 ### packer.nvim
+
+**Basic installation (no dependencies):**
+
+```lua
+use {
+  "jim-at-jibba/nvim-redraft",
+  config = function()
+    require("nvim-redraft").setup()
+  end,
+  run = "cd ts && npm install && npm run build",
+}
+```
+
+**With Snacks.nvim (recommended for enhanced UI):**
 
 ```lua
 use {
@@ -215,14 +246,16 @@ end, { desc = "AI Edit Selection" })
   },
   input = {
     prompt = string,           -- Input prompt text (default: "AI Edit: ")
-    icon = string,             -- Input icon (default: "󱚣")
-    win = table,               -- Snacks.input window options
+    icon = string,             -- Input icon (default: "󱚣", Snacks.nvim only)
+    win = table,               -- Window options (Snacks.nvim only)
   },
   debug = boolean,             -- Enable debug logging (default: false)
   log_file = string,           -- Log file path (default: "~/.local/state/nvim/nvim-redraft.log")
   debug_max_log_size = number, -- Max chars to log (default: 5000, 0 = unlimited)
 }
 ```
+
+**Note:** The `input.icon` and `input.win` options only apply when [Snacks.nvim](https://github.com/folke/snacks.nvim) is installed. Without Snacks.nvim, the plugin uses `vim.ui.input()` which displays prompts at the command line with only the `prompt` text.
 
 ## Troubleshooting
 

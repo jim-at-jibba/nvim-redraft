@@ -110,12 +110,42 @@ describe("input", function()
       assert.equals("  leading and trailing spaces  ", result)
     end)
 
-    it("should error when Snacks.nvim is not available", function()
+    it("should fallback to vim.ui.input when Snacks.nvim is not available", function()
+      package.loaded["snacks"] = nil
+      local result = nil
+      local callback_called = false
+
+      local original_vim_ui_input = vim.ui.input
+      vim.ui.input = function(opts, callback)
+        assert.equals("AI Edit: ", opts.prompt)
+        callback("fallback instruction")
+      end
+
+      input.get_instruction(mock_config, function(instruction)
+        callback_called = true
+        result = instruction
+      end)
+
+      vim.ui.input = original_vim_ui_input
+
+      assert.is_true(callback_called)
+      assert.equals("fallback instruction", result)
+    end)
+
+    it("should not pass icon or win options to vim.ui.input fallback", function()
       package.loaded["snacks"] = nil
 
-      assert.has_error(function()
-        input.get_instruction(mock_config, function() end)
-      end)
+      local original_vim_ui_input = vim.ui.input
+      vim.ui.input = function(opts, callback)
+        assert.equals("AI Edit: ", opts.prompt)
+        assert.is_nil(opts.icon)
+        assert.is_nil(opts.win)
+        callback("test")
+      end
+
+      input.get_instruction(mock_config, function() end)
+
+      vim.ui.input = original_vim_ui_input
     end)
 
     it("should use custom input options from config", function()
