@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+printf '%s\n' 'Running formatters...'
+make format
+
+printf '%s\n' 'Running linters...'
+make lint

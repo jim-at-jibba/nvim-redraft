@@ -1,12 +1,12 @@
-import { generateText, LanguageModel } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createXai } from "@ai-sdk/xai";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { logger } from "./logger";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
+import { generateText, LanguageModel } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { createXai } from '@ai-sdk/xai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { logger } from './logger';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 export interface EditRequest {
   code: string;
@@ -24,11 +24,7 @@ export interface EditRequest {
  * 4. Add the default model to DEFAULT_MODELS registry
  */
 export interface LLMProvider {
-  applyEdit(
-    code: string,
-    instruction: string,
-    systemPrompt?: string,
-  ): Promise<string>;
+  applyEdit(code: string, instruction: string, systemPrompt?: string): Promise<string>;
 }
 
 abstract class BaseLLMProvider implements LLMProvider {
@@ -45,7 +41,7 @@ abstract class BaseLLMProvider implements LLMProvider {
   protected abstract createProviderInstance(): any;
 
   protected getGenerateTextOptions(
-    method: "enhance" | "apply",
+    method: 'enhance' | 'apply',
     systemPrompt?: string,
   ): Record<string, any> {
     return {};
@@ -58,14 +54,10 @@ abstract class BaseLLMProvider implements LLMProvider {
     return match ? match[1] : trimmed;
   }
 
-  async applyEdit(
-    code: string,
-    instruction: string,
-    systemPrompt?: string,
-  ): Promise<string> {
-    logger.debug("apply-edit", `Calling ${this.model} for edit`);
-    logger.debug("apply-edit", "Input code:", code);
-    logger.debug("apply-edit", "Instruction:", instruction);
+  async applyEdit(code: string, instruction: string, systemPrompt?: string): Promise<string> {
+    logger.debug('apply-edit', `Calling ${this.model} for edit`);
+    logger.debug('apply-edit', 'Input code:', code);
+    logger.debug('apply-edit', 'Instruction:', instruction);
 
     const startTime = Date.now();
 
@@ -74,18 +66,18 @@ abstract class BaseLLMProvider implements LLMProvider {
     const defaultSystemPrompt =
       "You are a code editing assistant. Apply the user's requested changes to the code and return ONLY the modified code. Handle both brief instructions (e.g., 'add error handling') and detailed instructions equally well. Be precise and maintain code quality. Do not include explanations, markdown formatting, or any text before or after the code.";
 
-    const options = this.getGenerateTextOptions("apply", systemPrompt);
+    const options = this.getGenerateTextOptions('apply', systemPrompt);
 
     const result = await generateText({
       model: provider(this.model),
       ...options,
       messages: [
         {
-          role: "system",
+          role: 'system',
           content: systemPrompt || defaultSystemPrompt,
         },
         {
-          role: "user",
+          role: 'user',
           content: `${instruction}\n\n${code}`,
         },
       ],
@@ -94,21 +86,18 @@ abstract class BaseLLMProvider implements LLMProvider {
     const elapsed = Date.now() - startTime;
 
     if (!result.text) {
-      logger.error("apply-edit", "No response from edit");
-      throw new Error("No response from edit");
+      logger.error('apply-edit', 'No response from edit');
+      throw new Error('No response from edit');
     }
 
     const stripped = this.stripMarkdown(result.text);
 
-    logger.debug("apply-edit", "Edited code:", stripped);
-    logger.info(
-      "apply-edit",
-      `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
-    );
+    logger.debug('apply-edit', 'Edited code:', stripped);
+    logger.info('apply-edit', `Edit completed in ${elapsed}ms (${stripped.length} chars)`);
 
     if (result.usage) {
       logger.debug(
-        "apply-edit",
+        'apply-edit',
         `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
@@ -121,14 +110,10 @@ abstract class OpenAICompatibleProvider extends BaseLLMProvider {
   protected abstract getEndpoint(): string;
   protected abstract getAuthHeaders(): Promise<Record<string, string>>;
 
-  async applyEdit(
-    code: string,
-    instruction: string,
-    systemPrompt?: string,
-  ): Promise<string> {
-    logger.debug("apply-edit", `Calling ${this.model} for edit`);
-    logger.debug("apply-edit", "Input code:", code);
-    logger.debug("apply-edit", "Instruction:", instruction);
+  async applyEdit(code: string, instruction: string, systemPrompt?: string): Promise<string> {
+    logger.debug('apply-edit', `Calling ${this.model} for edit`);
+    logger.debug('apply-edit', 'Input code:', code);
+    logger.debug('apply-edit', 'Instruction:', instruction);
 
     const startTime = Date.now();
 
@@ -137,11 +122,11 @@ abstract class OpenAICompatibleProvider extends BaseLLMProvider {
 
     const messages = [
       {
-        role: "system",
+        role: 'system',
         content: systemPrompt || defaultSystemPrompt,
       },
       {
-        role: "user",
+        role: 'user',
         content: `${instruction}\n\n${code}`,
       },
     ];
@@ -149,9 +134,9 @@ abstract class OpenAICompatibleProvider extends BaseLLMProvider {
     try {
       const authHeaders = await this.getAuthHeaders();
       const response = await fetch(this.getEndpoint(), {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...authHeaders,
         },
         body: JSON.stringify({
@@ -164,51 +149,41 @@ abstract class OpenAICompatibleProvider extends BaseLLMProvider {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        logger.error(
-          "apply-edit",
-          `API request failed: ${response.status} ${response.statusText}`,
-        );
-        logger.error("apply-edit", `Response body: ${errorBody}`);
-        throw new Error(
-          `API request failed: ${response.status} ${response.statusText}`,
-        );
+        logger.error('apply-edit', `API request failed: ${response.status} ${response.statusText}`);
+        logger.error('apply-edit', `Response body: ${errorBody}`);
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
 
       const fullText = await this.parseSSEStream(response.body);
       const elapsed = Date.now() - startTime;
 
       if (!fullText) {
-        logger.error("apply-edit", "No response from edit");
-        throw new Error("No response from edit");
+        logger.error('apply-edit', 'No response from edit');
+        throw new Error('No response from edit');
       }
 
       const stripped = this.stripMarkdown(fullText);
 
-      logger.debug("apply-edit", "Edited code:", stripped);
-      logger.info(
-        "apply-edit",
-        `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
-      );
+      logger.debug('apply-edit', 'Edited code:', stripped);
+      logger.info('apply-edit', `Edit completed in ${elapsed}ms (${stripped.length} chars)`);
 
       return stripped;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error("apply-edit", `Request failed: ${errorMsg}`);
+      logger.error('apply-edit', `Request failed: ${errorMsg}`);
       throw error;
     }
   }
 
-  private async parseSSEStream(
-    body: ReadableStream<Uint8Array> | null,
-  ): Promise<string> {
+  private async parseSSEStream(body: ReadableStream<Uint8Array> | null): Promise<string> {
     if (!body) {
-      throw new Error("Response body is null");
+      throw new Error('Response body is null');
     }
 
     const reader = body.getReader();
     const decoder = new TextDecoder();
-    let fullText = "";
-    let buffer = "";
+    let fullText = '';
+    let buffer = '';
 
     try {
       while (true) {
@@ -216,13 +191,13 @@ abstract class OpenAICompatibleProvider extends BaseLLMProvider {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
+          if (line.startsWith('data: ')) {
             const data = line.slice(6);
-            if (data === "[DONE]") {
+            if (data === '[DONE]') {
               continue;
             }
 
@@ -233,7 +208,7 @@ abstract class OpenAICompatibleProvider extends BaseLLMProvider {
                 fullText += content;
               }
             } catch (e) {
-              logger.debug("apply-edit", `Failed to parse SSE chunk: ${data}`);
+              logger.debug('apply-edit', `Failed to parse SSE chunk: ${data}`);
             }
           }
         }
@@ -246,9 +221,7 @@ abstract class OpenAICompatibleProvider extends BaseLLMProvider {
   }
 
   protected createProviderInstance(): any {
-    throw new Error(
-      "OpenAICompatibleProvider does not use createProviderInstance",
-    );
+    throw new Error('OpenAICompatibleProvider does not use createProviderInstance');
   }
 }
 
@@ -257,14 +230,14 @@ class CopilotProvider extends OpenAICompatibleProvider {
   private tokenExpiresAt: number = 0;
 
   protected getEndpoint(): string {
-    return "https://api.githubcopilot.com/chat/completions";
+    return 'https://api.githubcopilot.com/chat/completions';
   }
 
   protected async getAuthHeaders(): Promise<Record<string, string>> {
     const bearerToken = await this.getBearerToken();
     return {
       Authorization: `Bearer ${bearerToken}`,
-      "editor-version": "vscode/1.90.2",
+      'editor-version': 'vscode/1.90.2',
     };
   }
 
@@ -280,22 +253,22 @@ class CopilotProvider extends OpenAICompatibleProvider {
 
   private async exchangeForBearerToken(oauthToken: string): Promise<string> {
     try {
-      const response = await fetch("https://api.github.com/copilot_internal/v2/token", {
-        method: "GET",
+      const response = await fetch('https://api.github.com/copilot_internal/v2/token', {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-          "accept": "*/*",
-          "authorization": `token ${oauthToken}`,
-          "editor-version": "vscode/1.90.2",
-          "editor-plugin-version": "copilot-chat/0.17.2024062801",
-          "user-agent": "GitHubCopilotChat/0.17.2024062801",
+          'Content-Type': 'application/json',
+          accept: '*/*',
+          authorization: `token ${oauthToken}`,
+          'editor-version': 'vscode/1.90.2',
+          'editor-plugin-version': 'copilot-chat/0.17.2024062801',
+          'user-agent': 'GitHubCopilotChat/0.17.2024062801',
         },
       });
 
       if (!response.ok) {
         const errorBody = await response.text();
         throw new Error(
-          `Failed to exchange OAuth token for bearer token: ${response.status} ${response.statusText}\n${errorBody}`
+          `Failed to exchange OAuth token for bearer token: ${response.status} ${response.statusText}\n${errorBody}`,
         );
       }
 
@@ -305,41 +278,38 @@ class CopilotProvider extends OpenAICompatibleProvider {
       this.tokenExpiresAt = data.expires_at;
 
       logger.debug(
-        "copilot",
-        `Successfully exchanged OAuth token for bearer token (expires at ${data.expires_at})`
+        'copilot',
+        `Successfully exchanged OAuth token for bearer token (expires at ${data.expires_at})`,
       );
 
       return data.token;
     } catch (error) {
       logger.error(
-        "copilot",
-        `Failed to exchange OAuth token: ${error instanceof Error ? error.message : String(error)}`
+        'copilot',
+        `Failed to exchange OAuth token: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
   }
 
   public extractCopilotToken(): string {
-    const configPath = path.join(
-      os.homedir(),
-      ".config/github-copilot/apps.json",
-    );
+    const configPath = path.join(os.homedir(), '.config/github-copilot/apps.json');
 
     try {
       if (!fs.existsSync(configPath)) {
         throw new Error(
-          "Copilot not authenticated. Install and authenticate copilot.lua first. " +
+          'Copilot not authenticated. Install and authenticate copilot.lua first. ' +
             `Expected config file at: ${configPath}`,
         );
       }
 
-      const configContent = fs.readFileSync(configPath, "utf-8");
+      const configContent = fs.readFileSync(configPath, 'utf-8');
       const config = JSON.parse(configContent);
 
-      const githubKey = Object.keys(config).find(key => key.startsWith("github.com"));
+      const githubKey = Object.keys(config).find((key) => key.startsWith('github.com'));
       if (!githubKey) {
         throw new Error(
-          "Copilot config missing github.com entry. " +
+          'Copilot config missing github.com entry. ' +
             `Check that ${configPath} contains a 'github.com' key`,
         );
       }
@@ -347,21 +317,16 @@ class CopilotProvider extends OpenAICompatibleProvider {
       const token = config[githubKey]?.oauth_token;
       if (!token) {
         throw new Error(
-          "Copilot config missing authentication token. " +
+          'Copilot config missing authentication token. ' +
             `Check that ${configPath} contains 'oauth_token' under the github.com key`,
         );
       }
 
-      logger.debug(
-        "copilot",
-        `Successfully extracted Copilot token from ${configPath}`,
-      );
+      logger.debug('copilot', `Successfully extracted Copilot token from ${configPath}`);
       return token;
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new Error(
-          `Copilot config file is corrupted (invalid JSON): ${configPath}`,
-        );
+        throw new Error(`Copilot config file is corrupted (invalid JSON): ${configPath}`);
       }
       throw error;
     }
@@ -374,7 +339,7 @@ class OpenAIProvider extends BaseLLMProvider {
   }
 
   protected getGenerateTextOptions(
-    method: "enhance" | "apply",
+    method: 'enhance' | 'apply',
     systemPrompt?: string,
   ): Record<string, any> {
     return {
@@ -389,7 +354,7 @@ class AnthropicProvider extends BaseLLMProvider {
   }
 
   protected getGenerateTextOptions(
-    method: "enhance" | "apply",
+    method: 'enhance' | 'apply',
     systemPrompt?: string,
   ): Record<string, any> {
     const options: Record<string, any> = {
@@ -403,27 +368,23 @@ class AnthropicProvider extends BaseLLMProvider {
     return options;
   }
 
-  async applyEdit(
-    code: string,
-    instruction: string,
-    systemPrompt?: string,
-  ): Promise<string> {
-    logger.debug("apply-edit", `Calling ${this.model} for edit`);
-    logger.debug("apply-edit", "Input code:", code);
-    logger.debug("apply-edit", "Instruction:", instruction);
+  async applyEdit(code: string, instruction: string, systemPrompt?: string): Promise<string> {
+    logger.debug('apply-edit', `Calling ${this.model} for edit`);
+    logger.debug('apply-edit', 'Input code:', code);
+    logger.debug('apply-edit', 'Instruction:', instruction);
 
     const startTime = Date.now();
 
     const provider = this.createProviderInstance();
 
-    const options = this.getGenerateTextOptions("apply", systemPrompt);
+    const options = this.getGenerateTextOptions('apply', systemPrompt);
 
     const result = await generateText({
       model: provider(this.model),
       ...options,
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: `${instruction}\n\n${code}`,
         },
       ],
@@ -432,21 +393,18 @@ class AnthropicProvider extends BaseLLMProvider {
     const elapsed = Date.now() - startTime;
 
     if (!result.text) {
-      logger.error("apply-edit", "No response from edit");
-      throw new Error("No response from edit");
+      logger.error('apply-edit', 'No response from edit');
+      throw new Error('No response from edit');
     }
 
     const stripped = this.stripMarkdown(result.text);
 
-    logger.debug("apply-edit", "Edited code:", stripped);
-    logger.info(
-      "apply-edit",
-      `Edit completed in ${elapsed}ms (${stripped.length} chars)`,
-    );
+    logger.debug('apply-edit', 'Edited code:', stripped);
+    logger.info('apply-edit', `Edit completed in ${elapsed}ms (${stripped.length} chars)`);
 
     if (result.usage) {
       logger.debug(
-        "apply-edit",
+        'apply-edit',
         `Token usage - input: ${result.usage.inputTokens}, output: ${result.usage.outputTokens}, total: ${result.usage.totalTokens}`,
       );
     }
@@ -461,7 +419,7 @@ class XaiProvider extends BaseLLMProvider {
   }
 
   protected getGenerateTextOptions(
-    method: "enhance" | "apply",
+    method: 'enhance' | 'apply',
     systemPrompt?: string,
   ): Record<string, any> {
     return {
@@ -476,7 +434,7 @@ class OpenRouterProvider extends BaseLLMProvider {
   }
 
   protected getGenerateTextOptions(
-    method: "enhance" | "apply",
+    method: 'enhance' | 'apply',
     systemPrompt?: string,
   ): Record<string, any> {
     return {
@@ -493,11 +451,15 @@ const PROVIDERS: Record<
   string,
   (apiKey: string, model: string, baseURL?: string, maxOutputTokens?: number) => LLMProvider
 > = {
-  openai: (apiKey, model, baseURL, maxOutputTokens) => new OpenAIProvider(apiKey, model, maxOutputTokens),
-  anthropic: (apiKey, model, baseURL, maxOutputTokens) => new AnthropicProvider(apiKey, model, maxOutputTokens),
+  openai: (apiKey, model, baseURL, maxOutputTokens) =>
+    new OpenAIProvider(apiKey, model, maxOutputTokens),
+  anthropic: (apiKey, model, baseURL, maxOutputTokens) =>
+    new AnthropicProvider(apiKey, model, maxOutputTokens),
   xai: (apiKey, model, baseURL, maxOutputTokens) => new XaiProvider(apiKey, model, maxOutputTokens),
-  openrouter: (apiKey, model, baseURL, maxOutputTokens) => new OpenRouterProvider(apiKey, model, maxOutputTokens),
-  copilot: (apiKey, model, baseURL, maxOutputTokens) => new CopilotProvider(apiKey, model, maxOutputTokens),
+  openrouter: (apiKey, model, baseURL, maxOutputTokens) =>
+    new OpenRouterProvider(apiKey, model, maxOutputTokens),
+  copilot: (apiKey, model, baseURL, maxOutputTokens) =>
+    new CopilotProvider(apiKey, model, maxOutputTokens),
 };
 
 /**
@@ -505,11 +467,11 @@ const PROVIDERS: Record<
  * To add a new provider, add one line here.
  */
 export const PROVIDER_API_KEYS: Record<string, string> = {
-  openai: "OPENAI_API_KEY",
-  anthropic: "ANTHROPIC_API_KEY",
-  xai: "XAI_API_KEY",
-  openrouter: "OPENROUTER_API_KEY",
-  copilot: "COPILOT_TOKEN",
+  openai: 'OPENAI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+  xai: 'XAI_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
+  copilot: 'COPILOT_TOKEN',
 };
 
 /**
@@ -517,11 +479,11 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
  * To add a new provider, add one line here.
  */
 export const DEFAULT_MODELS: Record<string, string> = {
-  openai: "gpt-4o-mini",
-  anthropic: "claude-3-5-sonnet-20241022",
-  xai: "grok-4-fast-non-reasoning",
-  openrouter: "anthropic/claude-3.5-sonnet",
-  copilot: "gpt-4o",
+  openai: 'gpt-4o-mini',
+  anthropic: 'claude-3-5-sonnet-20241022',
+  xai: 'grok-4-fast-non-reasoning',
+  openrouter: 'anthropic/claude-3.5-sonnet',
+  copilot: 'gpt-4o',
 };
 
 export function createProvider(
@@ -543,20 +505,18 @@ export function getApiKey(provider: string): string {
   if (!envVar) {
     throw new Error(`Unknown provider: ${provider}`);
   }
-  if (provider === "copilot") {
-    return "";
+  if (provider === 'copilot') {
+    return '';
   }
   const apiKey = process.env[envVar];
   if (!apiKey) {
-    throw new Error(
-      `${envVar} environment variable is required for provider '${provider}'`,
-    );
+    throw new Error(`${envVar} environment variable is required for provider '${provider}'`);
   }
   return apiKey;
 }
 
 export function getDefaultModel(provider: string): string {
-  return DEFAULT_MODELS[provider] || "";
+  return DEFAULT_MODELS[provider] || '';
 }
 
 export class LLMService {
@@ -569,25 +529,21 @@ export class LLMService {
   async edit(request: EditRequest): Promise<string> {
     const { code, instruction, systemPrompt } = request;
 
-    logger.debug("llm", "Starting edit process");
-    logger.debug("llm", `Instruction: ${instruction}`);
+    logger.debug('llm', 'Starting edit process');
+    logger.debug('llm', `Instruction: ${instruction}`);
 
     try {
-      const editedCode = await this.provider.applyEdit(
-        code,
-        instruction,
-        systemPrompt,
-      );
+      const editedCode = await this.provider.applyEdit(code, instruction, systemPrompt);
 
-      logger.info("llm", "Edit completed successfully");
+      logger.info('llm', 'Edit completed successfully');
       return editedCode;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error("llm", `Edit failed: ${errorMsg}`);
+      logger.error('llm', `Edit failed: ${errorMsg}`);
       if (error instanceof Error) {
         throw new Error(`Edit failed: ${error.message}`);
       }
-      throw new Error("Edit failed with unknown error");
+      throw new Error('Edit failed with unknown error');
     }
   }
 }

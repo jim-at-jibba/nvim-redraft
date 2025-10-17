@@ -2,7 +2,7 @@ local M = {}
 
 function M.get_model_selection(models, current_index, callback)
   local items = {}
-  
+
   for i, model_config in ipairs(models) do
     local display_name = model_config.label or (model_config.provider .. ": " .. (model_config.model or "default"))
     local is_current = (i == current_index)

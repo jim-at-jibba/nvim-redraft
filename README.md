@@ -292,10 +292,23 @@ The log contains:
 ## Development
 
 ```bash
-make test          # Run tests
-stylua lua/        # Format Lua code
+make test             # Run tests
+make format           # Format Lua and TypeScript
+make lint             # Lint Lua and TypeScript
+make install-hooks    # Copy pre-commit hook into .git/hooks
 cd ts && npm run build  # Build TypeScript service
 ```
+
+The pre-commit hook runs `make format` followed by `make lint`. Install it once per clone:
+
+```bash
+make install-hooks
+```
+
+> **Note**
+> - `stylua` must be available on your PATH.
+> - `luacheck` is required for Lua linting (`luarocks install luacheck`).
+> - Run `npm install` inside `ts/` to install TypeScript lint/format dependencies.
 
 ## License
 

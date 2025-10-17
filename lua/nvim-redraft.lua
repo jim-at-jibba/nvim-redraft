@@ -25,8 +25,21 @@ Generate a sparse edit showing only the changes needed:
 
 Be intelligent about preserving code structure, indentation, and style.]],
   keys = {
-    { "<leader>ae", function() require("nvim-redraft").edit() end, mode = "v", desc = "AI Edit Selection" },
-    { "<leader>am", function() require("nvim-redraft").select_model() end, desc = "Select AI Model" },
+    {
+      "<leader>ae",
+      function()
+        require("nvim-redraft").edit()
+      end,
+      mode = "v",
+      desc = "AI Edit Selection",
+    },
+    {
+      "<leader>am",
+      function()
+        require("nvim-redraft").select_model()
+      end,
+      desc = "Select AI Model",
+    },
   },
   llm = {
     provider = "openai",
@@ -113,12 +126,7 @@ function M.setup(opts)
       or M.config.llm.default_model_index < 1
       or M.config.llm.default_model_index > #M.config.llm.models
     then
-      error(
-        string.format(
-          "llm.default_model_index must be between 1 and %d",
-          #M.config.llm.models
-        )
-      )
+      error(string.format("llm.default_model_index must be between 1 and %d", #M.config.llm.models))
     end
     M.config.llm.current_index = M.config.llm.default_model_index
   else
@@ -149,10 +157,7 @@ function M.select_model()
       M.config.llm.current_index = index
       local selected = M.config.llm.models[index]
       local display_name = selected.label or (selected.provider .. ": " .. (selected.model or "default"))
-      vim.notify(
-        string.format("[nvim-redraft] Switched to %s", display_name),
-        vim.log.levels.INFO
-      )
+      vim.notify(string.format("[nvim-redraft] Switched to %s", display_name), vim.log.levels.INFO)
       logger.info("select_model", string.format("Switched to model index %d: %s", index, display_name))
     end
   end)

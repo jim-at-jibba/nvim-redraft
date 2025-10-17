@@ -1,11 +1,11 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from 'fs';
+import * as path from 'path';
 
 enum LogLevel {
-  DEBUG = "DEBUG",
-  INFO = "INFO",
-  WARN = "WARN",
-  ERROR = "ERROR",
+  DEBUG = 'DEBUG',
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR',
 }
 
 class Logger {
@@ -17,7 +17,7 @@ class Logger {
     const debugEnv = process.env.NVIM_REDRAFT_DEBUG;
     const logFileEnv = process.env.NVIM_REDRAFT_LOG_FILE;
 
-    this.enabled = debugEnv === "1";
+    this.enabled = debugEnv === '1';
     this.logFile = logFileEnv || null;
 
     if (this.enabled && this.logFile) {
@@ -35,7 +35,7 @@ class Logger {
       }
 
       if (!fs.existsSync(this.logFile)) {
-        fs.writeFileSync(this.logFile, "", { mode: 0o600 });
+        fs.writeFileSync(this.logFile, '', { mode: 0o600 });
       }
     } catch (error) {
       console.error(`[nvim-redraft] Failed to initialize log file: ${error}`);
@@ -46,11 +46,11 @@ class Logger {
   private formatTimestamp(): string {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    const seconds = String(now.getSeconds()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
@@ -77,10 +77,10 @@ class Logger {
       if (content) {
         const safeContent = this.truncateContent(content);
         const indentedContent = safeContent
-          .split("\n")
+          .split('\n')
           .map((line) => `  ${line}`)
-          .join("\n");
-        logContent += indentedContent + "\n";
+          .join('\n');
+        logContent += indentedContent + '\n';
       }
 
       fs.appendFileSync(this.logFile, logContent);

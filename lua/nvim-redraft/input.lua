@@ -2,7 +2,7 @@ local M = {}
 
 function M.get_instruction(config, callback)
   local ok, snacks = pcall(require, "snacks")
-  
+
   if ok and snacks.input then
     local input_opts = vim.tbl_deep_extend("force", {
       prompt = config.input.prompt or "AI Edit: ",
