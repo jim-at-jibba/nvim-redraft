@@ -1,4 +1,4 @@
-*nvim-redraft.txt*      For Neovim >= 11.0.0      Last change: 2025 October 17
+*nvim-redraft.txt*      For Neovim >= 11.0.0     Last change: 2025 December 17
 
 ==============================================================================
 Table of Contents                             *nvim-redraft-table-of-contents*
