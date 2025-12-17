@@ -2,6 +2,7 @@ import { generateText, LanguageModel } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createXai } from '@ai-sdk/xai';
+import { createCerebras } from '@ai-sdk/cerebras';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { logger } from './logger';
 import * as fs from 'fs';
@@ -443,6 +444,21 @@ class OpenRouterProvider extends BaseLLMProvider {
   }
 }
 
+class CerebrasProvider extends BaseLLMProvider {
+  protected createProviderInstance() {
+    return createCerebras({ apiKey: this.apiKey });
+  }
+
+  protected getGenerateTextOptions(
+    method: 'enhance' | 'apply',
+    systemPrompt?: string,
+  ): Record<string, any> {
+    return {
+      maxOutputTokens: this.maxOutputTokens,
+    };
+  }
+}
+
 /**
  * Provider registry maps provider names to factory functions.
  * To add a new provider, add one line here after implementing the LLMProvider interface.
@@ -460,6 +476,8 @@ const PROVIDERS: Record<
     new OpenRouterProvider(apiKey, model, maxOutputTokens),
   copilot: (apiKey, model, baseURL, maxOutputTokens) =>
     new CopilotProvider(apiKey, model, maxOutputTokens),
+  cerebras: (apiKey, model, baseURL, maxOutputTokens) =>
+    new CerebrasProvider(apiKey, model, maxOutputTokens),
 };
 
 /**
@@ -472,6 +490,7 @@ export const PROVIDER_API_KEYS: Record<string, string> = {
   xai: 'XAI_API_KEY',
   openrouter: 'OPENROUTER_API_KEY',
   copilot: 'COPILOT_TOKEN',
+  cerebras: 'CEREBRAS_API_KEY',
 };
 
 /**
@@ -484,6 +503,7 @@ export const DEFAULT_MODELS: Record<string, string> = {
   xai: 'grok-4-fast-non-reasoning',
   openrouter: 'anthropic/claude-3.5-sonnet',
   copilot: 'gpt-4o',
+  cerebras: 'qwen-3-235b-a22b-instruct-2507',
 };
 
 export function createProvider(

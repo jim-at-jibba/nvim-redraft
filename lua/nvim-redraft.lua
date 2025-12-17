@@ -108,11 +108,11 @@ function M.setup(opts)
     if not model_config.provider then
       error(string.format("llm.models[%d] must have a provider field", i))
     end
-    local valid_providers = { openai = true, anthropic = true, xai = true, openrouter = true, copilot = true }
+    local valid_providers = { openai = true, anthropic = true, xai = true, openrouter = true, copilot = true, cerebras = true }
     if not valid_providers[model_config.provider] then
       error(
         string.format(
-          "llm.models[%d].provider must be one of: openai, anthropic, xai, openrouter, copilot (got: %s)",
+          "llm.models[%d].provider must be one of: openai, anthropic, xai, openrouter, copilot, cerebras (got: %s)",
           i,
           model_config.provider
         )

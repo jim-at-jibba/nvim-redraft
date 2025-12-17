@@ -20,6 +20,7 @@ describe('LLM Provider System', () => {
       expect(PROVIDER_API_KEYS.xai).toBe('XAI_API_KEY');
       expect(PROVIDER_API_KEYS.openrouter).toBe('OPENROUTER_API_KEY');
       expect(PROVIDER_API_KEYS.copilot).toBe('COPILOT_TOKEN');
+      expect(PROVIDER_API_KEYS.cerebras).toBe('CEREBRAS_API_KEY');
     });
   });
 
@@ -30,6 +31,7 @@ describe('LLM Provider System', () => {
       expect(DEFAULT_MODELS.xai).toBe('grok-4-fast-non-reasoning');
       expect(DEFAULT_MODELS.openrouter).toBe('anthropic/claude-3.5-sonnet');
       expect(DEFAULT_MODELS.copilot).toBe('gpt-4o');
+      expect(DEFAULT_MODELS.cerebras).toBe('qwen-3-235b-a22b-instruct-2507');
     });
   });
 
@@ -64,6 +66,11 @@ describe('LLM Provider System', () => {
       expect(getApiKey('openrouter')).toBe('test-openrouter-key');
     });
 
+    it('should get Cerebras API key from environment', () => {
+      process.env.CEREBRAS_API_KEY = 'test-cerebras-key';
+      expect(getApiKey('cerebras')).toBe('test-cerebras-key');
+    });
+
     it('should get Copilot token from environment', () => {
       process.env.COPILOT_TOKEN = 'test-copilot-token';
       expect(getApiKey('copilot')).toBe('');
@@ -86,6 +93,7 @@ describe('LLM Provider System', () => {
       expect(getDefaultModel('xai')).toBe('grok-4-fast-non-reasoning');
       expect(getDefaultModel('openrouter')).toBe('anthropic/claude-3.5-sonnet');
       expect(getDefaultModel('copilot')).toBe('gpt-4o');
+      expect(getDefaultModel('cerebras')).toBe('qwen-3-235b-a22b-instruct-2507');
     });
 
     it('should return empty string for unknown provider', () => {
@@ -114,6 +122,12 @@ describe('LLM Provider System', () => {
 
     it('should create OpenRouter provider', () => {
       const provider = createProvider('openrouter', 'test-key', 'anthropic/claude-3.5-sonnet');
+      expect(provider).toBeDefined();
+      expect(provider.applyEdit).toBeDefined();
+    });
+
+    it('should create Cerebras provider', () => {
+      const provider = createProvider('cerebras', 'test-key', 'qwen-3-235b-a22b-instruct-2507');
       expect(provider).toBeDefined();
       expect(provider.applyEdit).toBeDefined();
     });
@@ -212,6 +226,11 @@ describe('Provider interfaces', () => {
 
   it('should implement LLMProvider interface - Copilot', () => {
     const provider = createProvider('copilot', 'test-key', 'gpt-4o');
+    expect(typeof provider.applyEdit).toBe('function');
+  });
+
+  it('should implement LLMProvider interface - Cerebras', () => {
+    const provider = createProvider('cerebras', 'test-key', 'qwen-3-235b-a22b-instruct-2507');
     expect(typeof provider.applyEdit).toBe('function');
   });
 });
