@@ -9,6 +9,8 @@ local diff = require("nvim-redraft.diff")
 
 local M = {}
 
+local SELECTION_NS = vim.api.nvim_create_namespace("nvim-redraft-selection")
+
 M.config = {
   system_prompt = [[You are a code editing assistant. Analyze the user's instruction and the selected code to determine the appropriate action.
 
@@ -199,7 +201,8 @@ function M.edit()
     return
   end
 
-  local bufnr = vim.api.nvim_get_current_buf()
+  local start_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.start_line - 1, 0, {})
+  local end_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.end_line - 1, 0, {})
 
   input.get_instruction(M.config, function(instruction)
     logger.debug("edit", "User instruction: " .. instruction)
@@ -235,6 +238,11 @@ function M.edit()
     }, function(result, error)
       spinner.stop()
 
+      local sm = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, start_mark, {})
+      local em = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, end_mark, {})
+      vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, start_mark)
+      vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, end_mark)
+
       if error then
         local elapsed = (vim.loop.hrtime() - start_time) / 1e9
         logger.error("edit", string.format("Edit failed after %.2fs: %s", elapsed, error))
@@ -242,10 +250,15 @@ function M.edit()
         return
       end
 
+      if #sm > 0 and #em > 0 then
+        sel.start_line = sm[1] + 1
+        sel.end_line = em[1] + 1
+      end
+
       logger.debug("edit", "Final result:", result)
 
       if M.config.diff_mode then
-        diff.inject_conflict_markers(bufnr, sel, result)
+        diff.inject_conflict_markers(sel, result)
         local elapsed = (vim.loop.hrtime() - start_time) / 1e9
         logger.info("edit", string.format("Diff injected in %.2fs - awaiting resolution", elapsed))
       else

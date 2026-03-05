@@ -87,10 +87,9 @@ local function setup_autocmds()
   })
 end
 
-function M.inject_conflict_markers(bufnr, selection, new_text)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
-
-  local original_lines = vim.api.nvim_buf_get_lines(bufnr, selection.start_line - 1, selection.end_line, false)
+function M.inject_conflict_markers(selection, new_text)
+  local original_lines =
+    vim.api.nvim_buf_get_lines(selection.bufnr, selection.start_line - 1, selection.end_line, false)
   local new_lines = vim.split(new_text, "\n")
 
   local conflict_lines = { CONFLICT_START }
@@ -99,7 +98,7 @@ function M.inject_conflict_markers(bufnr, selection, new_text)
   vim.list_extend(conflict_lines, new_lines)
   table.insert(conflict_lines, CONFLICT_END)
 
-  vim.api.nvim_buf_set_lines(bufnr, selection.start_line - 1, selection.end_line, false, conflict_lines)
+  vim.api.nvim_buf_set_lines(selection.bufnr, selection.start_line - 1, selection.end_line, false, conflict_lines)
 
   logger.debug(
     "diff",
@@ -107,7 +106,7 @@ function M.inject_conflict_markers(bufnr, selection, new_text)
   )
 
   setup_autocmds()
-  M.process_buffer(bufnr)
+  M.process_buffer(selection.bufnr)
 end
 
 function M.detect_conflicts(lines)

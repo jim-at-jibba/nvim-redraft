@@ -12,7 +12,7 @@ function M.replace_selection(selection, new_text)
 
   logger.debug("replace", string.format("Split into %d lines", #lines))
 
-  vim.api.nvim_buf_set_lines(0, selection.start_line - 1, selection.end_line, false, lines)
+  vim.api.nvim_buf_set_lines(selection.bufnr, selection.start_line - 1, selection.end_line, false, lines)
 
   logger.info("replace", "Code replacement completed")
 end
