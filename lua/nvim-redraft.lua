@@ -243,6 +243,11 @@ function M.edit()
     }, function(result, error)
       spinner.stop()
 
+      if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+        logger.warn("edit", "Buffer was closed during edit, aborting")
+        return
+      end
+
       local sm = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, start_mark, {})
       local em = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, end_mark, {})
       vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, start_mark)
