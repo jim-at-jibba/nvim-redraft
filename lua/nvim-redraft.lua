@@ -201,10 +201,15 @@ function M.edit()
     return
   end
 
-  local start_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.start_line - 1, 0, {})
-  local end_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.end_line - 1, 0, {})
-
   input.get_instruction(M.config, function(instruction)
+    if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+      logger.warn("edit", "Buffer was closed before edit request started, aborting")
+      return
+    end
+
+    local start_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.start_line - 1, 0, {})
+    local end_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.end_line - 1, 0, {})
+
     logger.debug("edit", "User instruction: " .. instruction)
     logger.debug("edit", "Selected code:", sel.text)
     logger.debug(
