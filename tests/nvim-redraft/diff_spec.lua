@@ -167,6 +167,25 @@ describe("diff", function()
       assert.equals(">>>>>>> Incoming", lines[6])
       assert.equals("after", lines[7])
     end)
+
+    it("should default to the current buffer when bufnr is missing", function()
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "original line" })
+
+      local selection = {
+        start_line = 1,
+        end_line = 1,
+      }
+
+      diff.inject_conflict_markers(selection, "new line")
+
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+      assert.equals(5, #lines)
+      assert.equals("<<<<<<< Current", lines[1])
+      assert.equals("original line", lines[2])
+      assert.equals("=======", lines[3])
+      assert.equals("new line", lines[4])
+      assert.equals(">>>>>>> Incoming", lines[5])
+    end)
   end)
 
   describe("resolve_conflict", function()
