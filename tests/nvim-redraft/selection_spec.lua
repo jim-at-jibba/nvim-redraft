@@ -122,5 +122,32 @@ describe("selection", function()
       assert.equals(3, result.start_line)
       assert.equals(3, result.end_line)
     end)
+
+    it("should prefer the visual mark buffer over the current buffer", function()
+      local current_bufnr = vim.api.nvim_get_current_buf()
+      local other_bufnr = vim.api.nvim_create_buf(false, true)
+      vim.api.nvim_buf_set_lines(other_bufnr, 0, -1, false, { "from mark buffer" })
+
+      local original_getpos = vim.fn.getpos
+      vim.fn.getpos = function(mark)
+        if mark == "'<" then
+          return { other_bufnr, 1, 1, 0 }
+        end
+        if mark == "'>" then
+          return { other_bufnr, 1, 16, 0 }
+        end
+        return original_getpos(mark)
+      end
+
+      local ok, result = pcall(selection.get_visual_selection)
+
+      vim.fn.getpos = original_getpos
+      vim.api.nvim_buf_delete(other_bufnr, { force = true })
+
+      assert.is_true(ok)
+      assert.equals(current_bufnr, vim.api.nvim_get_current_buf())
+      assert.equals(other_bufnr, result.bufnr)
+      assert.equals("from mark buffer", result.text)
+    end)
   end)
 end)

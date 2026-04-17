@@ -6,11 +6,18 @@ function M.get_visual_selection()
   local start_pos = vim.fn.getpos("'<")
   local end_pos = vim.fn.getpos("'>")
 
+  local start_bufnr = start_pos[1]
+  local end_bufnr = end_pos[1]
   local start_line = start_pos[2]
   local start_col = start_pos[3]
   local end_line = end_pos[2]
   local end_col = end_pos[3]
-  local bufnr = vim.api.nvim_get_current_buf()
+  local bufnr = start_bufnr ~= 0 and start_bufnr or vim.api.nvim_get_current_buf()
+
+  if start_bufnr ~= 0 and end_bufnr ~= 0 and start_bufnr ~= end_bufnr then
+    logger.warn("selection", "Selection marks span different buffers")
+    return nil, "Selection marks span different buffers"
+  end
 
   if start_line == 0 or end_line == 0 then
     logger.warn("selection", "No active visual selection (start_line or end_line is 0)")
