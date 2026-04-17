@@ -273,10 +273,24 @@ function M.edit()
         return
       end
 
-      if #sm > 0 and #em > 0 then
-        sel.start_line = sm[1] + 1
-        sel.end_line = em[1] + 1
+      if #sm == 0 or #em == 0 then
+        local elapsed = (vim.loop.hrtime() - start_time) / 1e9
+        logger.warn(
+          "edit",
+          string.format(
+            "Selection extmarks were lost after %.2fs; aborting edit to avoid applying at a stale position",
+            elapsed
+          )
+        )
+        vim.notify(
+          "[nvim-redraft] Edit aborted: selection changed and could not be reliably relocated",
+          vim.log.levels.WARN
+        )
+        return
       end
+
+      sel.start_line = sm[1] + 1
+      sel.end_line = em[1] + 1
 
       logger.debug("edit", "Final result:", result)
 
