@@ -201,14 +201,28 @@ function M.edit()
     return
   end
 
+  if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+    logger.warn("edit", "Buffer was closed before edit request started, aborting")
+    return
+  end
+
+  local start_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.start_line - 1, 0, {})
+  local end_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.end_line - 1, 0, {})
+
+  local function cleanup_selection_extmarks()
+    if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+      return
+    end
+
+    vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, start_mark)
+    vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, end_mark)
+  end
+
   input.get_instruction(M.config, function(instruction)
     if not vim.api.nvim_buf_is_valid(sel.bufnr) then
       logger.warn("edit", "Buffer was closed before edit request started, aborting")
       return
     end
-
-    local start_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.start_line - 1, 0, {})
-    local end_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.end_line - 1, 0, {})
 
     logger.debug("edit", "User instruction: " .. instruction)
     logger.debug("edit", "Selected code:", sel.text)
@@ -250,8 +264,7 @@ function M.edit()
 
       local sm = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, start_mark, {})
       local em = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, end_mark, {})
-      vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, start_mark)
-      vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, end_mark)
+      cleanup_selection_extmarks()
 
       if error then
         local elapsed = (vim.loop.hrtime() - start_time) / 1e9
@@ -278,7 +291,7 @@ function M.edit()
         vim.notify("[nvim-redraft] Edit applied", vim.log.levels.INFO)
       end
     end)
-  end)
+  end, cleanup_selection_extmarks)
 end
 
 M.diff = diff
