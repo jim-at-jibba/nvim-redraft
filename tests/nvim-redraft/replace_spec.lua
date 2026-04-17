@@ -145,5 +145,23 @@ describe("replace", function()
       assert.equals("new text", lines[1])
       assert.equals("", lines[2])
     end)
+
+    it("should default to the current buffer when bufnr is missing", function()
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "replace me" })
+
+      local selection = {
+        text = "replace me",
+        start_line = 1,
+        end_line = 1,
+        start_col = 1,
+        end_col = 10,
+      }
+
+      replace.replace_selection(selection, "replaced")
+
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+      assert.equals(1, #lines)
+      assert.equals("replaced", lines[1])
+    end)
   end)
 end)
