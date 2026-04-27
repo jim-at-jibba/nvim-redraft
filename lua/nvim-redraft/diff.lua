@@ -28,6 +28,18 @@ local CONFLICT_END_PATTERN = "^>>>>>>> "
 ---@type table<integer, BufferConflictState>
 local buffer_states = {}
 
+local function get_target_bufnr(selection)
+  if selection.bufnr == nil then
+    return 0
+  end
+
+  if selection.bufnr ~= 0 and not vim.api.nvim_buf_is_valid(selection.bufnr) then
+    error("selection.bufnr must be a valid buffer number")
+  end
+
+  return selection.bufnr
+end
+
 local function disable_diagnostics(bufnr)
   local state = buffer_states[bufnr]
   if state and state.diagnostics_disabled then
@@ -87,9 +99,8 @@ local function setup_autocmds()
   })
 end
 
-function M.inject_conflict_markers(bufnr, selection, new_text)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
-
+function M.inject_conflict_markers(selection, new_text)
+  local bufnr = get_target_bufnr(selection)
   local original_lines = vim.api.nvim_buf_get_lines(bufnr, selection.start_line - 1, selection.end_line, false)
   local new_lines = vim.split(new_text, "\n")
 

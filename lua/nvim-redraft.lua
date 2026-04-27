@@ -9,6 +9,8 @@ local diff = require("nvim-redraft.diff")
 
 local M = {}
 
+local SELECTION_NS = vim.api.nvim_create_namespace("nvim-redraft-selection")
+
 M.config = {
   system_prompt = [[You are a code editing assistant. Analyze the user's instruction and the selected code to determine the appropriate action.
 
@@ -199,9 +201,29 @@ function M.edit()
     return
   end
 
-  local bufnr = vim.api.nvim_get_current_buf()
+  if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+    logger.warn("edit", "Buffer was closed before edit request started, aborting")
+    return
+  end
+
+  local start_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.start_line - 1, 0, {})
+  local end_mark = vim.api.nvim_buf_set_extmark(sel.bufnr, SELECTION_NS, sel.end_line - 1, 0, {})
+
+  local function cleanup_selection_extmarks()
+    if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+      return
+    end
+
+    vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, start_mark)
+    vim.api.nvim_buf_del_extmark(sel.bufnr, SELECTION_NS, end_mark)
+  end
 
   input.get_instruction(M.config, function(instruction)
+    if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+      logger.warn("edit", "Buffer was closed before edit request started, aborting")
+      return
+    end
+
     logger.debug("edit", "User instruction: " .. instruction)
     logger.debug("edit", "Selected code:", sel.text)
     logger.debug(
@@ -235,6 +257,15 @@ function M.edit()
     }, function(result, error)
       spinner.stop()
 
+      if not vim.api.nvim_buf_is_valid(sel.bufnr) then
+        logger.warn("edit", "Buffer was closed during edit, aborting")
+        return
+      end
+
+      local sm = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, start_mark, {})
+      local em = vim.api.nvim_buf_get_extmark_by_id(sel.bufnr, SELECTION_NS, end_mark, {})
+      cleanup_selection_extmarks()
+
       if error then
         local elapsed = (vim.loop.hrtime() - start_time) / 1e9
         logger.error("edit", string.format("Edit failed after %.2fs: %s", elapsed, error))
@@ -242,10 +273,29 @@ function M.edit()
         return
       end
 
+      if #sm == 0 or #em == 0 then
+        local elapsed = (vim.loop.hrtime() - start_time) / 1e9
+        logger.warn(
+          "edit",
+          string.format(
+            "Selection extmarks were lost after %.2fs; aborting edit to avoid applying at a stale position",
+            elapsed
+          )
+        )
+        vim.notify(
+          "[nvim-redraft] Edit aborted: selection changed and could not be reliably relocated",
+          vim.log.levels.WARN
+        )
+        return
+      end
+
+      sel.start_line = sm[1] + 1
+      sel.end_line = em[1] + 1
+
       logger.debug("edit", "Final result:", result)
 
       if M.config.diff_mode then
-        diff.inject_conflict_markers(bufnr, sel, result)
+        diff.inject_conflict_markers(sel, result)
         local elapsed = (vim.loop.hrtime() - start_time) / 1e9
         logger.info("edit", string.format("Diff injected in %.2fs - awaiting resolution", elapsed))
       else
@@ -255,7 +305,7 @@ function M.edit()
         vim.notify("[nvim-redraft] Edit applied", vim.log.levels.INFO)
       end
     end)
-  end)
+  end, cleanup_selection_extmarks)
 end
 
 M.diff = diff

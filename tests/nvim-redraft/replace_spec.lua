@@ -12,6 +12,7 @@ describe("replace", function()
 
       local selection = {
         text = "hello world",
+        bufnr = 0,
         start_line = 1,
         end_line = 1,
         start_col = 1,
@@ -30,6 +31,7 @@ describe("replace", function()
 
       local selection = {
         text = "line 1\nline 2\nline 3",
+        bufnr = 0,
         start_line = 1,
         end_line = 3,
         start_col = 1,
@@ -48,6 +50,7 @@ describe("replace", function()
 
       local selection = {
         text = "single line",
+        bufnr = 0,
         start_line = 1,
         end_line = 1,
         start_col = 1,
@@ -68,6 +71,7 @@ describe("replace", function()
 
       local selection = {
         text = "old 1\nold 2\nold 3",
+        bufnr = 0,
         start_line = 1,
         end_line = 3,
         start_col = 1,
@@ -87,6 +91,7 @@ describe("replace", function()
 
       local selection = {
         text = "line 1\nline 2",
+        bufnr = 0,
         start_line = 1,
         end_line = 2,
         start_col = 1,
@@ -105,6 +110,7 @@ describe("replace", function()
 
       local selection = {
         text = "replace me",
+        bufnr = 0,
         start_line = 2,
         end_line = 2,
         start_col = 1,
@@ -125,6 +131,7 @@ describe("replace", function()
 
       local selection = {
         text = "original",
+        bufnr = 0,
         start_line = 1,
         end_line = 1,
         start_col = 1,
@@ -137,6 +144,24 @@ describe("replace", function()
       assert.equals(2, #lines)
       assert.equals("new text", lines[1])
       assert.equals("", lines[2])
+    end)
+
+    it("should default to the current buffer when bufnr is missing", function()
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "replace me" })
+
+      local selection = {
+        text = "replace me",
+        start_line = 1,
+        end_line = 1,
+        start_col = 1,
+        end_col = 10,
+      }
+
+      replace.replace_selection(selection, "replaced")
+
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+      assert.equals(1, #lines)
+      assert.equals("replaced", lines[1])
     end)
   end)
 end)

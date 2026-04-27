@@ -1,6 +1,6 @@
 local M = {}
 
-function M.get_instruction(config, callback)
+function M.get_instruction(config, callback, cancel_callback)
   local ok, snacks = pcall(require, "snacks")
 
   if ok and snacks.input then
@@ -13,6 +13,8 @@ function M.get_instruction(config, callback)
     snacks.input(input_opts, function(input)
       if input and input ~= "" then
         callback(input)
+      elseif cancel_callback then
+        cancel_callback()
       end
     end)
   else
@@ -21,6 +23,8 @@ function M.get_instruction(config, callback)
     }, function(input)
       if input and input ~= "" then
         callback(input)
+      elseif cancel_callback then
+        cancel_callback()
       end
     end)
   end

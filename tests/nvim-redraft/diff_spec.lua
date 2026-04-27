@@ -103,11 +103,12 @@ describe("diff", function()
       vim.api.nvim_buf_set_lines(0, 0, -1, false, { "original line" })
 
       local selection = {
+        bufnr = 0,
         start_line = 1,
         end_line = 1,
       }
 
-      diff.inject_conflict_markers(0, selection, "new line")
+      diff.inject_conflict_markers(selection, "new line")
 
       local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
@@ -123,11 +124,12 @@ describe("diff", function()
       vim.api.nvim_buf_set_lines(0, 0, -1, false, { "line 1", "line 2", "line 3" })
 
       local selection = {
+        bufnr = 0,
         start_line = 1,
         end_line = 3,
       }
 
-      diff.inject_conflict_markers(0, selection, "new line 1\nnew line 2")
+      diff.inject_conflict_markers(selection, "new line 1\nnew line 2")
 
       local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
@@ -147,11 +149,12 @@ describe("diff", function()
       vim.api.nvim_buf_set_lines(0, 0, -1, false, { "before", "replace me", "after" })
 
       local selection = {
+        bufnr = 0,
         start_line = 2,
         end_line = 2,
       }
 
-      diff.inject_conflict_markers(0, selection, "replaced")
+      diff.inject_conflict_markers(selection, "replaced")
 
       local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
@@ -163,6 +166,25 @@ describe("diff", function()
       assert.equals("replaced", lines[5])
       assert.equals(">>>>>>> Incoming", lines[6])
       assert.equals("after", lines[7])
+    end)
+
+    it("should default to the current buffer when bufnr is missing", function()
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, { "original line" })
+
+      local selection = {
+        start_line = 1,
+        end_line = 1,
+      }
+
+      diff.inject_conflict_markers(selection, "new line")
+
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+      assert.equals(5, #lines)
+      assert.equals("<<<<<<< Current", lines[1])
+      assert.equals("original line", lines[2])
+      assert.equals("=======", lines[3])
+      assert.equals("new line", lines[4])
+      assert.equals(">>>>>>> Incoming", lines[5])
     end)
   end)
 
